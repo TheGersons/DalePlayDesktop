@@ -1,0 +1,376 @@
+<Page x:Class="StreamManager.Views.Pages.PagosPlataformaPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      Title="Pagos a Plataformas">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock Grid.Row="0"
+                   Text="Gestión de Pagos a Plataformas" 
+                   FontSize="32"
+                   FontWeight="Bold"
+                   Margin="0,0,0,8"/>
+
+        <!-- Cards de Resumen -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Pagos Vencidos -->
+            <materialDesign:Card Grid.Column="0" Margin="0,0,8,0" Padding="20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <materialDesign:PackIcon Kind="AlertCircle" 
+                                                Width="24" Height="24" 
+                                                Foreground="#F44336"
+                                                VerticalAlignment="Center"/>
+                        <TextBlock Text="Pagos Vencidos" 
+                                  FontSize="12" 
+                                  Margin="8,0,0,0"
+                                  Opacity="0.7"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="PagosVencidosTextBlock"
+                              Text="0"
+                              FontSize="28"
+                              FontWeight="Bold"
+                              Foreground="#F44336"/>
+                    <TextBlock x:Name="MontoVencidoTextBlock"
+                              Text="L 0.00"
+                              FontSize="11"
+                              Opacity="0.6"
+                              Margin="0,4,0,0"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- Por Pagar -->
+            <materialDesign:Card Grid.Column="1" Margin="0,0,8,0" Padding="20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <materialDesign:PackIcon Kind="ClockAlert" 
+                                                Width="24" Height="24" 
+                                                Foreground="#FF9800"
+                                                VerticalAlignment="Center"/>
+                        <TextBlock Text="Por Pagar" 
+                                  FontSize="12" 
+                                  Margin="8,0,0,0"
+                                  Opacity="0.7"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="PagosPorPagarTextBlock"
+                              Text="0"
+                              FontSize="28"
+                              FontWeight="Bold"
+                              Foreground="#FF9800"/>
+                    <TextBlock x:Name="MontoPorPagarTextBlock"
+                              Text="L 0.00"
+                              FontSize="11"
+                              Opacity="0.6"
+                              Margin="0,4,0,0"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- Al Día -->
+            <materialDesign:Card Grid.Column="2" Margin="0,0,8,0" Padding="20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <materialDesign:PackIcon Kind="CheckCircle" 
+                                                Width="24" Height="24" 
+                                                Foreground="#4CAF50"
+                                                VerticalAlignment="Center"/>
+                        <TextBlock Text="Al Día" 
+                                  FontSize="12" 
+                                  Margin="8,0,0,0"
+                                  Opacity="0.7"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="PagosAlDiaTextBlock"
+                              Text="0"
+                              FontSize="28"
+                              FontWeight="Bold"
+                              Foreground="#4CAF50"/>
+                    <TextBlock x:Name="MontoAlDiaTextBlock"
+                              Text="L 0.00"
+                              FontSize="11"
+                              Opacity="0.6"
+                              Margin="0,4,0,0"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- Gasto Mensual -->
+            <materialDesign:Card Grid.Column="3" Padding="20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <materialDesign:PackIcon Kind="TrendingUp" 
+                                                Width="24" Height="24" 
+                                                Foreground="#2196F3"
+                                                VerticalAlignment="Center"/>
+                        <TextBlock Text="Gasto Mensual Total" 
+                                  FontSize="12" 
+                                  Margin="8,0,0,0"
+                                  Opacity="0.7"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="GastoMensualTextBlock"
+                              Text="L 0.00"
+                              FontSize="28"
+                              FontWeight="Bold"
+                              Foreground="#2196F3"/>
+                    <TextBlock Text="En plataformas"
+                              FontSize="11"
+                              Opacity="0.6"
+                              Margin="0,4,0,0"/>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
+        <!-- Botones de acción y filtros -->
+        <Grid Grid.Row="2" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Botones de acción -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button x:Name="NuevoPagoButton"
+                       Style="{StaticResource MaterialDesignRaisedButton}"
+                       Click="NuevoPagoButton_Click"
+                       Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Plus" 
+                                                VerticalAlignment="Center"
+                                                Width="18"
+                                                Height="18"/>
+                        <TextBlock Text="NUEVO PAGO" 
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="RefrescarButton"
+                       Style="{StaticResource MaterialDesignOutlinedButton}"
+                       Click="RefrescarButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Refresh" 
+                                                VerticalAlignment="Center"
+                                                Width="18"
+                                                Height="18"/>
+                        <TextBlock Text="REFRESCAR" 
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- Filtro de estado -->
+            <ComboBox x:Name="EstadoFiltroComboBox"
+                     Grid.Column="2"
+                     materialDesign:HintAssist.Hint="Estado"
+                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                     Width="150"
+                     SelectionChanged="EstadoFiltroComboBox_SelectionChanged">
+                <ComboBoxItem Content="Todos" Tag="todos" IsSelected="True"/>
+                <ComboBoxItem Content="Vencidos" Tag="vencido"/>
+                <ComboBoxItem Content="Por Pagar" Tag="por_pagar"/>
+                <ComboBoxItem Content="Al Día" Tag="al_dia"/>
+            </ComboBox>
+        </Grid>
+
+        <!-- Lista de Pagos a Plataformas -->
+        <materialDesign:Card Grid.Row="3"
+                             Padding="0"
+                             materialDesign:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="PagosPlataformaItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#E0E0E0"
+                                       BorderThickness="0,0,0,1"
+                                       Background="{Binding EstadoBackground}"
+                                       Padding="24">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Icono de Plataforma -->
+                                        <Border Grid.Column="0"
+                                               Width="56"
+                                               Height="56"
+                                               CornerRadius="28"
+                                               Background="{Binding PlataformaColor}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,20,0">
+                                            <materialDesign:PackIcon Kind="{Binding PlataformaIcono}"
+                                                                    Width="28"
+                                                                    Height="28"
+                                                                    Foreground="White"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- Información -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding PlataformaNombre}"
+                                                      FontSize="18"
+                                                      FontWeight="Bold"
+                                                      Margin="0,0,0,4"/>
+                                            
+                                            <TextBlock Text="{Binding CuentaEmail}"
+                                                      FontSize="13"
+                                                      Opacity="0.7"
+                                                      Margin="0,0,0,8"/>
+
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Background="{Binding EstadoColor}"
+                                                       CornerRadius="4"
+                                                       Padding="8,4"
+                                                       Margin="0,0,8,0">
+                                                    <TextBlock Text="{Binding EstadoTexto}"
+                                                              FontSize="11"
+                                                              FontWeight="Bold"
+                                                              Foreground="White"/>
+                                                </Border>
+
+                                                <TextBlock Text="{Binding FechaProximoPagoTexto}"
+                                                          FontSize="13"
+                                                          VerticalAlignment="Center"
+                                                          Margin="0,0,12,0"/>
+
+                                                <TextBlock Text="{Binding DiasRestantesTexto}"
+                                                          FontSize="13"
+                                                          FontWeight="Bold"
+                                                          Foreground="{Binding DiasRestantesColor}"
+                                                          VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Monto -->
+                                        <StackPanel Grid.Column="2"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,20,0">
+                                            <TextBlock Text="Monto Mensual"
+                                                      FontSize="11"
+                                                      Opacity="0.6"
+                                                      HorizontalAlignment="Right"/>
+                                            <TextBlock Text="{Binding MontoMensualTexto}"
+                                                      FontSize="24"
+                                                      FontWeight="Bold"
+                                                      Foreground="{Binding EstadoColor}"
+                                                      HorizontalAlignment="Right"/>
+                                            <TextBlock Text="{Binding MetodoPagoPreferido}"
+                                                      FontSize="11"
+                                                      Opacity="0.6"
+                                                      HorizontalAlignment="Right"
+                                                      Margin="0,4,0,0"/>
+                                        </StackPanel>
+
+                                        <!-- Acciones -->
+                                        <StackPanel Grid.Column="3"
+                                                   Orientation="Vertical"
+                                                   VerticalAlignment="Center">
+                                            <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                                   Background="#4CAF50"
+                                                   BorderBrush="#4CAF50"
+                                                   Tag="{Binding Id}"
+                                                   Click="RegistrarPagoButton_Click"
+                                                   Margin="0,0,0,8"
+                                                   Width="140">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="Check"
+                                                                            Width="18"
+                                                                            Height="18"
+                                                                            VerticalAlignment="Center"/>
+                                                    <TextBlock Text="PAGAR"
+                                                              Margin="8,0,0,0"
+                                                              VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                   Tag="{Binding Id}"
+                                                   Click="VerHistorialButton_Click"
+                                                   Width="140">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="History"
+                                                                            Width="18"
+                                                                            Height="18"
+                                                                            VerticalAlignment="Center"/>
+                                                    <TextBlock Text="HISTORIAL"
+                                                              Margin="8,0,0,0"
+                                                              VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Loading overlay -->
+                <Grid x:Name="LoadingOverlay"
+                      Background="#80000000"
+                      Visibility="Collapsed">
+                    <StackPanel VerticalAlignment="Center" 
+                               HorizontalAlignment="Center">
+                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                    Value="0"
+                                    IsIndeterminate="True"
+                                    Width="48"
+                                    Height="48"/>
+                        <TextBlock Text="Cargando pagos..." 
+                                  Foreground="White"
+                                  Margin="0,16,0,0"
+                                  HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Estado vacío -->
+                <StackPanel x:Name="EmptyStatePanel"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Visibility="Collapsed"
+                           Margin="40">
+                    <materialDesign:PackIcon Kind="CreditCardOff"
+                                            Width="80"
+                                            Height="80"
+                                            Foreground="#CCCCCC"
+                                            HorizontalAlignment="Center"/>
+                    <TextBlock Text="No hay pagos a plataformas"
+                              FontSize="20"
+                              FontWeight="SemiBold"
+                              Foreground="#999999"
+                              HorizontalAlignment="Center"
+                              Margin="0,16,0,8"/>
+                    <TextBlock Text="Configura los pagos mensuales a las plataformas"
+                              FontSize="14"
+                              Foreground="#999999"
+                              HorizontalAlignment="Center"
+                              TextWrapping="Wrap"
+                              TextAlignment="Center"
+                              MaxWidth="300"/>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+    </Grid>
+</Page>

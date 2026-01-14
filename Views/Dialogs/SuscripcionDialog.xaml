@@ -1,0 +1,119 @@
+<Window x:Class="StreamManager.Views.Dialogs.SuscripcionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Suscripción"
+        Height="600"
+        Width="550"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignPaper}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock x:Name="TituloTextBlock"
+                   Grid.Row="0"
+                   Text="Nueva Suscripción"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Margin="0,0,0,24"/>
+
+        <!-- Formulario -->
+        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Cliente -->
+                <ComboBox x:Name="ClienteComboBox"
+                         materialDesign:HintAssist.Hint="Cliente *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         DisplayMemberPath="NombreCompleto"
+                         Margin="0,0,0,16"/>
+
+                <!-- Plataforma -->
+                <ComboBox x:Name="PlataformaComboBox"
+                         materialDesign:HintAssist.Hint="Plataforma *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         DisplayMemberPath="Nombre"
+                         SelectionChanged="PlataformaComboBox_SelectionChanged"
+                         Margin="0,0,0,16"/>
+
+                <!-- Cuenta -->
+                <ComboBox x:Name="CuentaComboBox"
+                         materialDesign:HintAssist.Hint="Cuenta *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         SelectionChanged="CuentaComboBox_SelectionChanged"
+                         Margin="0,0,0,16"
+                         IsEnabled="False"/>
+
+                <!-- Perfil -->
+                <ComboBox x:Name="PerfilComboBox"
+                         materialDesign:HintAssist.Hint="Perfil Disponible *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         DisplayMemberPath="NombrePerfil"
+                         Margin="0,0,0,16"
+                         IsEnabled="False"/>
+
+                <!-- Costo Mensual -->
+                <TextBox x:Name="CostoTextBox"
+                        materialDesign:HintAssist.Hint="Costo Mensual (L) *"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        PreviewTextInput="NumeroTextBox_PreviewTextInput"/>
+
+                <!-- Fecha Inicio -->
+                <DatePicker x:Name="FechaInicioDatePicker"
+                           materialDesign:HintAssist.Hint="Fecha de Inicio *"
+                           Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                           SelectedDateChanged="FechaInicioDatePicker_SelectedDateChanged"
+                           Margin="0,0,0,16"/>
+
+                <!-- Próximo Pago -->
+                <DatePicker x:Name="ProximoPagoDatePicker"
+                           materialDesign:HintAssist.Hint="Próximo Pago *"
+                           Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                           Margin="0,0,0,16"/>
+
+                <!-- Estado -->
+                <ComboBox x:Name="EstadoComboBox"
+                         materialDesign:HintAssist.Hint="Estado *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         Margin="0,0,0,16">
+                    <ComboBoxItem Content="Activa" Tag="activa" IsSelected="True"/>
+                    <ComboBoxItem Content="Vencida" Tag="vencida"/>
+                    <ComboBoxItem Content="Cancelada" Tag="cancelada"/>
+                </ComboBox>
+
+                <!-- Notas -->
+                <TextBox x:Name="NotasTextBox"
+                        materialDesign:HintAssist.Hint="Notas"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        AcceptsReturn="True"
+                        TextWrapping="Wrap"
+                        VerticalScrollBarVisibility="Auto"
+                        MinHeight="80"
+                        MaxLength="1000"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Botones -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button Content="CANCELAR"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Click="CancelarButton_Click"
+                    Margin="0,0,8,0"/>
+            <Button x:Name="GuardarButton"
+                    Content="GUARDAR"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="GuardarButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

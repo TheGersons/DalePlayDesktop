@@ -1,0 +1,177 @@
+<Page x:Class="StreamManager.Views.Pages.PlataformasPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      Title="Plataformas">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock Grid.Row="0"
+                   Text="Plataformas de Streaming" 
+                   Style="{StaticResource PageTitle}"/>
+
+        <!-- Barra de acciones -->
+        <StackPanel Grid.Row="1" 
+                    Orientation="Horizontal" 
+                    Margin="0,0,0,16">
+            <Button x:Name="NuevoButton"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="NuevoButton_Click"
+                    Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Plus" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="NUEVA PLATAFORMA" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="RefrescarButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="RefrescarButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Refresh" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="REFRESCAR" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- DataGrid de plataformas -->
+        <materialDesign:Card Grid.Row="2"
+                             Padding="16"
+                             materialDesign:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Buscador -->
+                <TextBox x:Name="BuscarTextBox"
+                         Grid.Row="0"
+                         materialDesign:HintAssist.Hint="Buscar plataforma..."
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"
+                         TextChanged="BuscarTextBox_TextChanged">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Escape" Command="{Binding ClearCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+
+                <!-- DataGrid -->
+                <DataGrid x:Name="PlataformasDataGrid"
+                          Grid.Row="1"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          materialDesign:DataGridAssist.CellPadding="8"
+                          materialDesign:DataGridAssist.ColumnHeaderPadding="8">
+                    <DataGrid.Columns>
+                        <!-- Icono -->
+                        <DataGridTemplateColumn Header="Icono" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <materialDesign:PackIcon Kind="{Binding Icono}" 
+                                                            Width="32" 
+                                                            Height="32"
+                                                            HorizontalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Nombre -->
+                        <DataGridTextColumn Header="Nombre" 
+                                          Binding="{Binding Nombre}"
+                                          Width="*"/>
+
+                        <!-- Precio Base -->
+                        <DataGridTextColumn Header="Precio perfil" 
+                                          Binding="{Binding PrecioBase, StringFormat=L {0:N2}}"
+                                          Width="120"/>
+
+                        <!-- Precio Base -->
+                        <DataGridTextColumn Header="Precio cuenta completa" 
+                  Binding="{Binding PrecioBase, StringFormat=L {0:N2}}"
+                  Width="120"/>
+
+                        <!-- Máx Perfiles -->
+                        <DataGridTextColumn Header="Máx. Perfiles" 
+                                          Binding="{Binding MaxPerfiles}"
+                                          Width="120"/>
+
+                        <!-- Estado -->
+                        <DataGridTemplateColumn Header="Estado" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Background="{Binding Estado, Converter={StaticResource EstadoColorConverter}}"
+                                            CornerRadius="12"
+                                            Padding="8,4">
+                                        <TextBlock Text="{Binding Estado}" 
+                                                  Foreground="White"
+                                                  FontWeight="SemiBold"
+                                                  HorizontalAlignment="Center"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Acciones -->
+                        <DataGridTemplateColumn Header="Acciones" Width="180">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" 
+                                               HorizontalAlignment="Center">
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                               ToolTip="Editar"
+                                               Click="EditarButton_Click"
+                                               Tag="{Binding}">
+                                            <materialDesign:PackIcon Kind="Pencil"/>
+                                        </Button>
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                               ToolTip="Eliminar"
+                                               Click="EliminarButton_Click"
+                                               Tag="{Binding}"
+                                               Foreground="Red">
+                                            <materialDesign:PackIcon Kind="Delete"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Loading overlay -->
+                <Grid x:Name="LoadingOverlay"
+                      Grid.Row="1"
+                      Background="#80000000"
+                      Visibility="Collapsed">
+                    <StackPanel VerticalAlignment="Center" 
+                               HorizontalAlignment="Center">
+                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                    Value="0"
+                                    IsIndeterminate="True"
+                                    Width="48"
+                                    Height="48"/>
+                        <TextBlock Text="Cargando..." 
+                                  Foreground="White"
+                                  Margin="0,16,0,0"
+                                  HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </materialDesign:Card>
+    </Grid>
+</Page>

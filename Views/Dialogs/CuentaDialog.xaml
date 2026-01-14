@@ -1,0 +1,93 @@
+<Window x:Class="StreamManager.Views.Dialogs.CuentaDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Cuenta de Correo"
+        Height="550"
+        Width="550"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignPaper}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock x:Name="TituloTextBlock"
+                   Grid.Row="0"
+                   Text="Nueva Cuenta de Correo"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Margin="0,0,0,24"/>
+
+        <!-- Formulario -->
+        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Plataforma -->
+                <ComboBox x:Name="PlataformaComboBox"
+                         materialDesign:HintAssist.Hint="Plataforma *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         DisplayMemberPath="Nombre"
+                         Margin="0,0,0,16"/>
+
+                <!-- Correo Electrónico -->
+                <TextBox x:Name="CorreoTextBox"
+                        materialDesign:HintAssist.Hint="Correo Electrónico *"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        MaxLength="200"/>
+
+                <!-- Contraseña -->
+                <TextBox x:Name="ContraseñaTextBox"
+                        materialDesign:HintAssist.Hint="Contraseña *"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        MaxLength="200"/>
+
+                <TextBlock Text="💡 Tip: Guarda la contraseña de forma segura"
+                          FontSize="12"
+                          Opacity="0.7"
+                          Margin="0,-12,0,16"/>
+
+                <!-- Estado -->
+                <ComboBox x:Name="EstadoComboBox"
+                         materialDesign:HintAssist.Hint="Estado *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         Margin="0,0,0,16">
+                    <ComboBoxItem Content="Activa" Tag="activa" IsSelected="True"/>
+                    <ComboBoxItem Content="Inactiva" Tag="inactiva"/>
+                </ComboBox>
+
+                <!-- Notas -->
+                <TextBox x:Name="NotasTextBox"
+                        materialDesign:HintAssist.Hint="Notas"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        AcceptsReturn="True"
+                        TextWrapping="Wrap"
+                        VerticalScrollBarVisibility="Auto"
+                        MinHeight="80"
+                        MaxLength="1000"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Botones -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button Content="CANCELAR"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Click="CancelarButton_Click"
+                    Margin="0,0,8,0"/>
+            <Button x:Name="GuardarButton"
+                    Content="GUARDAR"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="GuardarButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

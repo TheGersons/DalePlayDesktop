@@ -1,0 +1,81 @@
+<Window x:Class="StreamManager.Views.Dialogs.ClienteDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Cliente"
+        Height="600"
+        Width="550"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignPaper}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock x:Name="TituloTextBlock"
+                   Grid.Row="0"
+                   Text="Nuevo Cliente"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Margin="0,0,0,24"/>
+
+        <!-- Formulario -->
+        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Nombre Completo -->
+                <TextBox x:Name="NombreTextBox"
+                        materialDesign:HintAssist.Hint="Nombre Completo *"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        MaxLength="200"/>
+
+                <!-- Teléfono -->
+                <TextBox x:Name="TelefonoTextBox"
+                        materialDesign:HintAssist.Hint="Teléfono"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        MaxLength="20"/>
+
+                <!-- Estado -->
+                <ComboBox x:Name="EstadoComboBox"
+                         materialDesign:HintAssist.Hint="Estado *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         Margin="0,0,0,16">
+                    <ComboBoxItem Content="Activo" Tag="activo" IsSelected="True"/>
+                    <ComboBoxItem Content="Inactivo" Tag="inactivo"/>
+                </ComboBox>
+
+                <!-- Notas -->
+                <TextBox x:Name="NotasTextBox"
+                        materialDesign:HintAssist.Hint="Notas"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        AcceptsReturn="True"
+                        TextWrapping="Wrap"
+                        VerticalScrollBarVisibility="Auto"
+                        MinHeight="80"
+                        MaxLength="1000"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Botones -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button Content="CANCELAR"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Click="CancelarButton_Click"
+                    Margin="0,0,8,0"/>
+            <Button x:Name="GuardarButton"
+                    Content="GUARDAR"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="GuardarButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

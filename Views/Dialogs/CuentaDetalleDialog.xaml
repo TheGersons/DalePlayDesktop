@@ -1,0 +1,197 @@
+<Window x:Class="StreamManager.Views.Dialogs.CuentaDetalleDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Detalles de la Cuenta"
+        Height="550"
+        Width="600"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignPaper}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <materialDesign:ColorZone Grid.Row="0"
+                                  Mode="PrimaryMid"
+                                  Padding="24,16">
+            <Grid>
+                <StackPanel>
+                    <TextBlock x:Name="PlataformaTextBlock"
+                              Text="Plataforma"
+                              FontSize="24"
+                              FontWeight="Bold"/>
+                    <TextBlock x:Name="CorreoTextBlock"
+                              Text="correo@ejemplo.com"
+                              FontSize="14"
+                              Opacity="0.8"
+                              Margin="0,4,0,0"/>
+                </StackPanel>
+            </Grid>
+        </materialDesign:ColorZone>
+
+        <!-- Contenido -->
+        <ScrollViewer Grid.Row="1"
+                     VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24">
+                <!-- Información de Cuenta -->
+                <TextBlock Text="INFORMACIÓN DE CUENTA"
+                          FontWeight="SemiBold"
+                          FontSize="16"
+                          Margin="0,0,0,16"/>
+
+                <materialDesign:Card Padding="16" Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Correo -->
+                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0"
+                                                Kind="Email"
+                                                Margin="0,0,16,12"
+                                                VerticalAlignment="Center"/>
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,12">
+                            <TextBlock Text="Correo Electrónico" 
+                                      FontSize="12" 
+                                      Opacity="0.7"/>
+                            <TextBlock x:Name="CorreoDetalleTextBlock"
+                                      Text="correo@ejemplo.com"
+                                      FontSize="14"
+                                      FontWeight="SemiBold"/>
+                        </StackPanel>
+
+                        <!-- Contraseña -->
+                        <materialDesign:PackIcon Grid.Row="1" Grid.Column="0"
+                                                Kind="Key"
+                                                Margin="0,0,16,12"
+                                                VerticalAlignment="Center"/>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
+                            <TextBlock Text="Contraseña" 
+                                      FontSize="12" 
+                                      Opacity="0.7"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="ContraseñaTextBlock"
+                                          Text="••••••••"
+                                          FontSize="14"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,8,0"/>
+                                <Button x:Name="MostrarContraseñaButton"
+                                       Style="{StaticResource MaterialDesignFlatButton}"
+                                       Content="MOSTRAR"
+                                       Click="MostrarContraseñaButton_Click"
+                                       Padding="8,4"/>
+                                <Button x:Name="CopiarButton"
+                                       Style="{StaticResource MaterialDesignFlatButton}"
+                                       Content="COPIAR"
+                                       Click="CopiarButton_Click"
+                                       Padding="8,4"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Fecha Creación -->
+                        <materialDesign:PackIcon Grid.Row="2" Grid.Column="0"
+                                                Kind="CalendarPlus"
+                                                Margin="0,0,16,12"
+                                                VerticalAlignment="Center"/>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
+                            <TextBlock Text="Fecha de Creación" 
+                                      FontSize="12" 
+                                      Opacity="0.7"/>
+                            <TextBlock x:Name="FechaCreacionTextBlock"
+                                      Text="01/01/2024"
+                                      FontSize="14"/>
+                        </StackPanel>
+
+                        <!-- Estado -->
+                        <materialDesign:PackIcon Grid.Row="3" Grid.Column="0"
+                                                Kind="CheckCircle"
+                                                Margin="0,0,16,0"
+                                                VerticalAlignment="Center"/>
+                        <StackPanel Grid.Row="3" Grid.Column="1">
+                            <TextBlock Text="Estado" 
+                                      FontSize="12" 
+                                      Opacity="0.7"/>
+                            <Border x:Name="EstadoBorder"
+                                   Background="#4CAF50"
+                                   CornerRadius="12"
+                                   Padding="12,4"
+                                   HorizontalAlignment="Left"
+                                   Margin="0,4,0,0">
+                                <TextBlock x:Name="EstadoTextBlock"
+                                          Text="Activa"
+                                          Foreground="White"
+                                          FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Información de Perfiles -->
+                <TextBlock Text="PERFILES"
+                          FontWeight="SemiBold"
+                          FontSize="16"
+                          Margin="0,8,0,16"/>
+
+                <materialDesign:Card Padding="16" Margin="0,0,0,16">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="AccountMultiple"
+                                                    Width="32"
+                                                    Height="32"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,16,0"/>
+                            <StackPanel>
+                                <TextBlock x:Name="PerfilesDisponiblesTextBlock"
+                                          Text="0 perfiles disponibles"
+                                          FontSize="18"
+                                          FontWeight="Bold"/>
+                                <TextBlock Text="De esta cuenta"
+                                          FontSize="12"
+                                          Opacity="0.7"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Notas -->
+                <TextBlock Text="NOTAS"
+                          FontWeight="SemiBold"
+                          FontSize="16"
+                          Margin="0,8,0,16"/>
+
+                <materialDesign:Card Padding="16">
+                    <TextBlock x:Name="NotasTextBlock"
+                              Text="Sin notas"
+                              TextWrapping="Wrap"
+                              Foreground="{DynamicResource MaterialDesignBody}"/>
+                </materialDesign:Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Botón Cerrar -->
+        <Border Grid.Row="2"
+               Background="{DynamicResource MaterialDesignDivider}"
+               Height="1"
+               VerticalAlignment="Top"/>
+        
+        <Button Grid.Row="2"
+               Content="CERRAR"
+               Style="{StaticResource MaterialDesignFlatButton}"
+               Click="CerrarButton_Click"
+               HorizontalAlignment="Right"
+               Margin="16"/>
+    </Grid>
+</Window>

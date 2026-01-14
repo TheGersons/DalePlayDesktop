@@ -1,0 +1,187 @@
+<Page x:Class="StreamManager.Views.Pages.PerfilesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      Title="Perfiles">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock Grid.Row="0"
+                   Text="Gestión de Perfiles" 
+                   Style="{StaticResource PageTitle}"/>
+
+        <!-- Barra de acciones -->
+        <StackPanel Grid.Row="1" 
+                    Orientation="Horizontal" 
+                    Margin="0,0,0,16">
+            <Button x:Name="NuevoButton"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="NuevoButton_Click"
+                    Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="AccountPlus" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="NUEVO PERFIL" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="RefrescarButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="RefrescarButton_Click"
+                    Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Refresh" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="REFRESCAR" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Filtros -->
+            <ComboBox x:Name="EstadoFiltroComboBox"
+                     materialDesign:HintAssist.Hint="Filtrar por estado"
+                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                     MinWidth="150"
+                     SelectionChanged="FiltroComboBox_SelectionChanged">
+                <ComboBoxItem Content="Todos" Tag="" IsSelected="True"/>
+                <ComboBoxItem Content="Disponibles" Tag="disponible"/>
+                <ComboBoxItem Content="Ocupados" Tag="ocupado"/>
+            </ComboBox>
+        </StackPanel>
+
+        <!-- DataGrid de perfiles -->
+        <materialDesign:Card Grid.Row="2"
+                             Padding="16"
+                             materialDesign:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Buscador -->
+                <TextBox x:Name="BuscarTextBox"
+                         Grid.Row="0"
+                         materialDesign:HintAssist.Hint="Buscar perfil..."
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"
+                         TextChanged="BuscarTextBox_TextChanged"/>
+
+                <!-- DataGrid -->
+                <DataGrid x:Name="PerfilesDataGrid"
+                          Grid.Row="1"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          materialDesign:DataGridAssist.CellPadding="8"
+                          materialDesign:DataGridAssist.ColumnHeaderPadding="8">
+                    <DataGrid.Columns>
+                        <!-- Nombre -->
+                        <DataGridTextColumn Header="Nombre" 
+                                          Binding="{Binding Nombre}"
+                                          Width="200"/>
+
+                        <!-- Plataforma -->
+                        <DataGridTextColumn Header="Plataforma" 
+                                          Binding="{Binding PlataformaNombre}"
+                                          Width="150"/>
+
+                        <!-- Cuenta -->
+                        <DataGridTextColumn Header="Cuenta" 
+                                          Binding="{Binding CuentaNombre}"
+                                          Width="*"/>
+
+                        <!-- PIN -->
+                        <DataGridTemplateColumn Header="PIN" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Pin}" 
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,8,0"/>
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                               ToolTip="Copiar PIN"
+                                               Click="CopiarPinButton_Click"
+                                               Tag="{Binding}">
+                                            <materialDesign:PackIcon Kind="ContentCopy" Width="16" Height="16"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Estado -->
+                        <DataGridTemplateColumn Header="Estado" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Background="{Binding Estado, Converter={StaticResource EstadoColorConverter}}"
+                                            CornerRadius="12"
+                                            Padding="8,4">
+                                        <TextBlock Text="{Binding Estado}" 
+                                                  Foreground="White"
+                                                  FontWeight="SemiBold"
+                                                  HorizontalAlignment="Center"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Acciones -->
+                        <DataGridTemplateColumn Header="Acciones" Width="140">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" 
+                                               HorizontalAlignment="Center">
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                               ToolTip="Editar"
+                                               Click="EditarButton_Click"
+                                               Tag="{Binding}">
+                                            <materialDesign:PackIcon Kind="Pencil"/>
+                                        </Button>
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                               ToolTip="Eliminar"
+                                               Click="EliminarButton_Click"
+                                               Tag="{Binding}"
+                                               Foreground="Red">
+                                            <materialDesign:PackIcon Kind="Delete"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Loading overlay -->
+                <Grid x:Name="LoadingOverlay"
+                      Grid.Row="1"
+                      Background="#80000000"
+                      Visibility="Collapsed">
+                    <StackPanel VerticalAlignment="Center" 
+                               HorizontalAlignment="Center">
+                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                    Value="0"
+                                    IsIndeterminate="True"
+                                    Width="48"
+                                    Height="48"/>
+                        <TextBlock Text="Cargando..." 
+                                  Foreground="White"
+                                  Margin="0,16,0,0"
+                                  HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </materialDesign:Card>
+    </Grid>
+</Page>

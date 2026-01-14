@@ -1,0 +1,335 @@
+<Page x:Class="StreamManager.Views.Pages.ReportesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      Title="Reportes">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Título -->
+            <TextBlock Grid.Row="0"
+                       Text="Reportes y Análisis" 
+                       Style="{StaticResource PageTitle}"/>
+
+            <!-- Filtros y Generación -->
+            <materialDesign:Card Grid.Row="1"
+                                 Margin="0,0,0,24"
+                                 Padding="24"
+                                 materialDesign:ElevationAssist.Elevation="Dp2">
+                <StackPanel>
+                    <TextBlock Text="Generar Reporte"
+                              FontSize="18"
+                              FontWeight="SemiBold"
+                              Margin="0,0,0,16"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Tipo de Reporte -->
+                        <ComboBox x:Name="TipoReporteComboBox"
+                                 Grid.Column="0"
+                                 materialDesign:HintAssist.Hint="Tipo de Reporte"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 Margin="0,0,12,0">
+                            <ComboBoxItem Content="Ingresos Mensuales" Tag="ingresos" IsSelected="True"/>
+                            <ComboBoxItem Content="Clientes Activos" Tag="clientes"/>
+                            <ComboBoxItem Content="Suscripciones por Plataforma" Tag="suscripciones"/>
+                            <ComboBoxItem Content="Perfiles Disponibles" Tag="perfiles"/>
+                            <ComboBoxItem Content="Alertas Pendientes" Tag="alertas"/>
+                            <ComboBoxItem Content="Reporte Completo" Tag="completo"/>
+                        </ComboBox>
+
+                        <!-- Fecha Inicio -->
+                        <DatePicker x:Name="FechaInicioDatePicker"
+                                   Grid.Column="1"
+                                   materialDesign:HintAssist.Hint="Fecha Inicio"
+                                   Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                   Margin="0,0,12,0"/>
+
+                        <!-- Fecha Fin -->
+                        <DatePicker x:Name="FechaFinDatePicker"
+                                   Grid.Column="2"
+                                   materialDesign:HintAssist.Hint="Fecha Fin"
+                                   Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                   Margin="0,0,12,0"/>
+
+                        <!-- Botón Generar -->
+                        <Button x:Name="GenerarReporteButton"
+                               Grid.Column="3"
+                               Style="{StaticResource MaterialDesignRaisedButton}"
+                               Click="GenerarReporteButton_Click"
+                               Height="56">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FileChart"
+                                                        Width="20"
+                                                        Height="20"
+                                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="GENERAR"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- Botones de Exportación -->
+                    <StackPanel Orientation="Horizontal"
+                               Margin="0,16,0,0">
+                        <Button x:Name="ExportarPDFButton"
+                               Style="{StaticResource MaterialDesignOutlinedButton}"
+                               Click="ExportarPDFButton_Click"
+                               Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="File"
+                                                        Width="18"
+                                                        Height="18"
+                                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="Exportar PDF"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="ExportarExcelButton"
+                               Style="{StaticResource MaterialDesignOutlinedButton}"
+                               Click="ExportarExcelButton_Click"
+                               Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FileExcel"
+                                                        Width="18"
+                                                        Height="18"
+                                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="Exportar Excel"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="ImprimirButton"
+                               Style="{StaticResource MaterialDesignOutlinedButton}"
+                               Click="ImprimirButton_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Printer"
+                                                        Width="18"
+                                                        Height="18"
+                                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="Imprimir"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- Resumen Ejecutivo -->
+            <Grid Grid.Row="2"
+                  Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Card 1: Ingresos Totales -->
+                <materialDesign:Card Grid.Column="0"
+                                     Margin="0,0,12,0"
+                                     Padding="20"
+                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <materialDesign:PackIcon Kind="CurrencyUsd"
+                                                    Width="24"
+                                                    Height="24"
+                                                    Foreground="#4CAF50"/>
+                            <TextBlock Text="Ingresos Totales"
+                                      FontSize="13"
+                                      Opacity="0.7"
+                                      VerticalAlignment="Center"
+                                      Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="IngresosTotalesTextBlock"
+                                  Text="L 0.00"
+                                  FontSize="28"
+                                  FontWeight="Bold"
+                                  Foreground="#4CAF50"/>
+                        <TextBlock x:Name="PeriodoIngresosTextBlock"
+                                  Text="Período seleccionado"
+                                  FontSize="11"
+                                  Opacity="0.6"
+                                  Margin="0,4,0,0"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Card 2: Total Suscripciones -->
+                <materialDesign:Card Grid.Column="1"
+                                     Margin="0,0,12,0"
+                                     Padding="20"
+                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <materialDesign:PackIcon Kind="AccountCash"
+                                                    Width="24"
+                                                    Height="24"
+                                                    Foreground="#2196F3"/>
+                            <TextBlock Text="Suscripciones"
+                                      FontSize="13"
+                                      Opacity="0.7"
+                                      VerticalAlignment="Center"
+                                      Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TotalSuscripcionesTextBlock"
+                                  Text="0"
+                                  FontSize="28"
+                                  FontWeight="Bold"
+                                  Foreground="#2196F3"/>
+                        <TextBlock x:Name="SuscripcionesActivasTextBlock"
+                                  Text="0 activas"
+                                  FontSize="11"
+                                  Opacity="0.6"
+                                  Margin="0,4,0,0"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Card 3: Clientes -->
+                <materialDesign:Card Grid.Column="2"
+                                     Margin="0,0,12,0"
+                                     Padding="20"
+                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <materialDesign:PackIcon Kind="AccountGroup"
+                                                    Width="24"
+                                                    Height="24"
+                                                    Foreground="#FF9800"/>
+                            <TextBlock Text="Clientes"
+                                      FontSize="13"
+                                      Opacity="0.7"
+                                      VerticalAlignment="Center"
+                                      Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TotalClientesTextBlock"
+                                  Text="0"
+                                  FontSize="28"
+                                  FontWeight="Bold"
+                                  Foreground="#FF9800"/>
+                        <TextBlock x:Name="ClientesActivosTextBlock"
+                                  Text="0 activos"
+                                  FontSize="11"
+                                  Opacity="0.6"
+                                  Margin="0,4,0,0"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Card 4: Promedio Ingreso -->
+                <materialDesign:Card Grid.Column="3"
+                                     Padding="20"
+                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <materialDesign:PackIcon Kind="ChartLine"
+                                                    Width="24"
+                                                    Height="24"
+                                                    Foreground="#9C27B0"/>
+                            <TextBlock Text="Promedio/Cliente"
+                                      FontSize="13"
+                                      Opacity="0.7"
+                                      VerticalAlignment="Center"
+                                      Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="PromedioClienteTextBlock"
+                                  Text="L 0.00"
+                                  FontSize="28"
+                                  FontWeight="Bold"
+                                  Foreground="#9C27B0"/>
+                        <TextBlock Text="Ingreso promedio"
+                                  FontSize="11"
+                                  Opacity="0.6"
+                                  Margin="0,4,0,0"/>
+                    </StackPanel>
+                </materialDesign:Card>
+            </Grid>
+
+            <!-- Tabla de Datos del Reporte -->
+            <materialDesign:Card Grid.Row="3"
+                                 Padding="24"
+                                 materialDesign:ElevationAssist.Elevation="Dp2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Título de Tabla -->
+                    <TextBlock x:Name="TituloTablaTextBlock"
+                              Grid.Row="0"
+                              Text="Datos del Reporte"
+                              FontSize="18"
+                              FontWeight="SemiBold"
+                              Margin="0,0,0,16"/>
+
+                    <!-- DataGrid -->
+                    <DataGrid x:Name="ReportesDataGrid"
+                              Grid.Row="1"
+                              AutoGenerateColumns="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              SelectionMode="Extended"
+                              MaxHeight="400"
+                              materialDesign:DataGridAssist.CellPadding="8"
+                              materialDesign:DataGridAssist.ColumnHeaderPadding="8"/>
+
+                    <!-- Loading overlay -->
+                    <Grid x:Name="LoadingOverlay"
+                          Grid.Row="1"
+                          Background="#80000000"
+                          Visibility="Collapsed">
+                        <StackPanel VerticalAlignment="Center" 
+                                   HorizontalAlignment="Center">
+                            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                        Value="0"
+                                        IsIndeterminate="True"
+                                        Width="48"
+                                        Height="48"/>
+                            <TextBlock Text="Generando reporte..." 
+                                      Foreground="White"
+                                      Margin="0,16,0,0"
+                                      HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Estado vacío -->
+                    <StackPanel x:Name="EmptyStatePanel"
+                               Grid.Row="1"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Visibility="Visible">
+                        <materialDesign:PackIcon Kind="FileChart"
+                                                Width="64"
+                                                Height="64"
+                                                Foreground="#CCCCCC"
+                                                HorizontalAlignment="Center"/>
+                        <TextBlock Text="Selecciona un tipo de reporte y presiona Generar"
+                                  FontSize="16"
+                                  Foreground="#999999"
+                                  HorizontalAlignment="Center"
+                                  Margin="0,16,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
+    </ScrollViewer>
+</Page>

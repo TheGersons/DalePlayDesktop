@@ -1,0 +1,121 @@
+<Window x:Class="StreamManager.Views.Dialogs.PlataformaDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Plataforma"
+        Height="550"
+        Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignPaper}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock x:Name="TituloTextBlock"
+                   Grid.Row="0"
+                   Text="Nueva Plataforma"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Margin="0,0,0,24"/>
+
+        <!-- Formulario -->
+        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Nombre -->
+                <TextBox x:Name="NombreTextBox"
+                        materialDesign:HintAssist.Hint="Nombre *"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        MaxLength="100"/>
+
+                <!-- Icono -->
+                <ComboBox x:Name="IconoComboBox"
+                         materialDesign:HintAssist.Hint="Icono"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         Margin="0,0,0,16">
+                    <ComboBoxItem Content="Television" Tag="Television"/>
+                    <ComboBoxItem Content="Netflix" Tag="Netflix"/>
+                    <ComboBoxItem Content="DisneyPlus" Tag="DisneyPlus"/>
+                    <ComboBoxItem Content="Hbo" Tag="Hbo"/>
+                    <ComboBoxItem Content="Amazon" Tag="Amazon"/>
+                    <ComboBoxItem Content="Star" Tag="Star"/>
+                    <ComboBoxItem Content="Paramount" Tag="Paramount"/>
+                    <ComboBoxItem Content="AppleIos" Tag="AppleIos"/>
+                    <ComboBoxItem Content="Spotify" Tag="Spotify"/>
+                    <ComboBoxItem Content="Youtube" Tag="Youtube"/>
+                    <ComboBoxItem Content="Movie" Tag="Movie"/>
+                    <ComboBoxItem Content="Play" Tag="Play"/>
+                </ComboBox>
+
+                <!-- Precio Base -->
+                <TextBox x:Name="PrecioTextBox"
+                        materialDesign:HintAssist.Hint="Precio Base (L) *"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        PreviewTextInput="NumeroTextBox_PreviewTextInput"/>
+
+                <!-- Precio cuenta completa -->
+                <TextBox x:Name="PrecioCompletaTextBox"
+        materialDesign:HintAssist.Hint="Precio Cuenta completa (L) *"
+        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+        Margin="0,0,0,16"/>
+                
+                <!-- Máx Perfiles -->
+                <TextBox x:Name="MaxPerfilesTextBox"
+                        materialDesign:HintAssist.Hint="Máximo de Perfiles *"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        PreviewTextInput="NumeroEnteroTextBox_PreviewTextInput"/>
+
+                <!-- Color -->
+                <TextBox x:Name="ColorTextBox"
+                        materialDesign:HintAssist.Hint="Color (Hex: #RRGGBB)"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        Margin="0,0,0,16"
+                        MaxLength="7"
+                        Text="#2196F3"/>
+
+                <!-- Estado -->
+                <ComboBox x:Name="EstadoComboBox"
+                         materialDesign:HintAssist.Hint="Estado *"
+                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                         Margin="0,0,0,16">
+                    <ComboBoxItem Content="Activa" Tag="activa" IsSelected="True"/>
+                    <ComboBoxItem Content="Inactiva" Tag="inactiva"/>
+                </ComboBox>
+
+                <!-- Notas -->
+                <TextBox x:Name="NotasTextBox"
+                        materialDesign:HintAssist.Hint="Notas"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        AcceptsReturn="True"
+                        TextWrapping="Wrap"
+                        VerticalScrollBarVisibility="Auto"
+                        MinHeight="80"
+                        MaxLength="500"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Botones -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button Content="CANCELAR"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Click="CancelarButton_Click"
+                    Margin="0,0,8,0"/>
+            <Button x:Name="GuardarButton"
+                    Content="GUARDAR"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="GuardarButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
