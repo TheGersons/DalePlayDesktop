@@ -29,5 +29,8 @@ namespace StreamManager.Data.Models
 
         [Column("notas")]
         public string? Notas { get; set; }
+
+        [Column("deleted_at")]
+        public DateTime? DeletedAt { get; set; }
     }
 }

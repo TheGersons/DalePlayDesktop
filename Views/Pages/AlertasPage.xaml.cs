@@ -19,7 +19,7 @@ namespace StreamManager.Views.Pages
 
             _supabase = App.ServiceProvider?.GetRequiredService<SupabaseService>()
                 ?? throw new InvalidOperationException("SupabaseService no disponible");
-            
+
             _alertaService = App.ServiceProvider?.GetRequiredService<AlertaService>()
                 ?? throw new InvalidOperationException("AlertaService no disponible");
 
@@ -103,10 +103,15 @@ namespace StreamManager.Views.Pages
             {
                 var alertasViewModel = alertasOrdenadas.Select(a => CrearAlertaViewModel(a)).ToList();
                 AlertasItemsControl.ItemsSource = alertasViewModel;
+
+                // ✅ CORRECCIÓN: Mostrar lista y ocultar estado vacío
                 AlertasScrollViewer.Visibility = Visibility.Visible;
+                EmptyStatePanel.Visibility = Visibility.Collapsed;
             }
             else
             {
+                // ✅ CORRECCIÓN: Ocultar lista y mostrar estado vacío
+                AlertasScrollViewer.Visibility = Visibility.Collapsed;
                 EmptyStatePanel.Visibility = Visibility.Visible;
             }
         }
@@ -121,7 +126,7 @@ namespace StreamManager.Views.Pages
                 Estado = alerta.Estado,
                 Nivel = alerta.Nivel,
                 TipoAlerta = alerta.TipoAlerta,
-                
+
                 // Iconos y colores
                 TipoIcono = ObtenerIconoPorTipo(alerta.TipoAlerta),
                 TipoColor = ObtenerColorPorTipo(alerta.TipoAlerta),
@@ -131,14 +136,14 @@ namespace StreamManager.Views.Pages
                 EstadoColor = ObtenerColorPorEstado(alerta.Estado),
                 EstadoTexto = ObtenerTextoEstado(alerta.Estado),
                 EstadoBackground = alerta.Estado != "pendiente" ? new SolidColorBrush(Color.FromRgb(250, 250, 250)) : Brushes.White,
-                
+
                 // Visibilidad de elementos
                 EsPendiente = alerta.Estado == "pendiente" ? Visibility.Visible : Visibility.Collapsed,
                 TieneDiasRestantes = alerta.DiasRestantes.HasValue ? Visibility.Visible : Visibility.Collapsed,
                 TieneMonto = alerta.Monto.HasValue && alerta.Monto > 0 ? Visibility.Visible : Visibility.Collapsed,
-                
+
                 // Datos adicionales
-                DiasRestantesTexto = alerta.DiasRestantes.HasValue ? 
+                DiasRestantesTexto = alerta.DiasRestantes.HasValue ?
                     (alerta.DiasRestantes >= 0 ? $"{alerta.DiasRestantes} días restantes" : $"Vencido hace {Math.Abs(alerta.DiasRestantes.Value)} días") : "",
                 MontoTexto = alerta.Monto.HasValue ? $"Monto: L {alerta.Monto:N2}" : ""
             };
@@ -168,7 +173,7 @@ namespace StreamManager.Views.Pages
                 return $"Hace {(int)diferencia.TotalHours}h";
             if (diferencia.TotalDays < 7)
                 return $"Hace {(int)diferencia.TotalDays}d";
-            
+
             return fecha.ToString("dd/MM/yyyy");
         }
 
@@ -385,7 +390,7 @@ namespace StreamManager.Views.Pages
                     {
                         if (alerta.TipoAlerta == "cobro_cliente")
                         {
-                            mainWindow.NavigateToPage("SuscripcionesPage");
+                            mainWindow.NavigateToPage("GestionPagosClientesPage");
                         }
                         else if (alerta.TipoAlerta == "pago_plataforma")
                         {

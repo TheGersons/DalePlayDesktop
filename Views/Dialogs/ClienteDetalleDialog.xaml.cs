@@ -13,10 +13,10 @@ namespace StreamManager.Views.Dialogs
             CargarDatos(cliente);
         }
 
-        private void CargarDatos(Cliente cliente)
+        private void CargarDatos(Cliente cliente) 
         {
             NombreTextBlock.Text = cliente.NombreCompleto;
-            TelefonoTextBlock.Text = cliente.Telefono ?? "No especificado";
+            TelefonoTextBlock.Text = cliente.Telefono ?? "No especificado.";
 
             FechaRegistroTextBlock.Text = cliente.FechaRegistro.ToString("dd/MM/yyyy HH:mm");
             

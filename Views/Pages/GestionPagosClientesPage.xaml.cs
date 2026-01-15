@@ -268,8 +268,8 @@ namespace StreamManager.Views.Pages
                 var dialog = new Window
                 {
                     Title = "Registrar Pago",
-                    Width = 400,
-                    Height = 350,
+                    Width = 430,
+                    Height = 400,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
                     ResizeMode = ResizeMode.NoResize
                 };
@@ -337,15 +337,15 @@ namespace StreamManager.Views.Pages
                 var confirmarBtn = new Button 
                 { 
                     Content = "CONFIRMAR PAGO",
-                    Width = 140,
+                    Width = 160,
                     Height = 36,
-                    Margin = new Thickness(0, 0, 10, 0)
+                    Margin = new Thickness(0, 0, 8, 0)
                 };
 
                 var cancelarBtn = new Button 
                 { 
                     Content = "CANCELAR",
-                    Width = 100,
+                    Width = 110,
                     Height = 36
                 };
 

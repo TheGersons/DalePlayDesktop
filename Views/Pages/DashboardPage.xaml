@@ -25,6 +25,31 @@
                           Opacity="0.7"/>
             </StackPanel>
 
+            <!-- Botón de Acción Rápida -->
+            <Button x:Name="SuscripcionRapidaButton"
+        Style="{StaticResource MaterialDesignRaisedButton}"
+        Background="#FF9800"
+        BorderBrush="#FF9800"
+        Height="60"
+        Margin="0,80,0,24"
+        Click="SuscripcionRapidaButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="RocketLaunch"
+                                Width="24"
+                                Height="24"
+                                VerticalAlignment="Center"
+                                Margin="0,0,12,0"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="CREAR SUSCRIPCIÓN RÁPIDA"
+                      FontSize="14"
+                      FontWeight="Bold"/>
+                        <TextBlock Text="Cliente + Cuenta + Perfil + Suscripción en un paso"
+                      FontSize="11"
+                      Opacity="0.9"/>
+                    </StackPanel>
+                </StackPanel>
+            </Button>
+
             <!-- Cards de Estadísticas -->
             <Grid Grid.Row="1" Margin="0,0,0,24">
                 <Grid.ColumnDefinitions>

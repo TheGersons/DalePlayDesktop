@@ -270,7 +270,7 @@
                 <StackPanel x:Name="EmptyStatePanel"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
-                           Visibility="Visible"
+                           Visibility="Collapsed"
                            Margin="40">
                     <materialDesign:PackIcon Kind="BellOff"
                                             Width="80"

@@ -162,7 +162,10 @@ namespace StreamManager.Services
         public async Task<List<CuentaCorreo>> ObtenerCuentasAsync()
         {
             var client = GetClient();
-            var response = await client.From<CuentaCorreo>().Get();
+            var response = await client
+                .From<CuentaCorreo>()
+                .Where(c => c.DeletedAt == null)  // ← AGREGAR
+                .Get();
             return response.Models;
         }
 
@@ -199,7 +202,10 @@ namespace StreamManager.Services
         public async Task<List<Perfil>> ObtenerPerfilesAsync()
         {
             var client = GetClient();
-            var response = await client.From<Perfil>().Get();
+            var response = await client
+                .From<Perfil>()
+                .Where(p => p.DeletedAt == null)  // ← AGREGAR
+                .Get();
             return response.Models;
         }
 
@@ -248,7 +254,10 @@ namespace StreamManager.Services
         public async Task<List<Cliente>> ObtenerClientesAsync()
         {
             var client = GetClient();
-            var response = await client.From<Cliente>().Get();
+            var response = await client
+                .From<Cliente>()
+                .Where(c => c.DeletedAt == null)  // ← AGREGAR ESTO
+                .Get();
             return response.Models;
         }
 
@@ -266,10 +275,46 @@ namespace StreamManager.Services
             return response.Models.First();
         }
 
-        public async Task EliminarClienteAsync(Guid id)
+        public async Task EliminarClienteAsync(Guid clienteId)
         {
             var client = GetClient();
-            await client.From<Cliente>().Where(x => x.Id == id).Delete();
+            var cliente = await client
+                .From<Cliente>()
+                .Where(c => c.Id == clienteId)
+                .Single();
+            if (cliente is null) return;
+            cliente.DeletedAt = DateTime.UtcNow;
+
+            await client
+                .From<Cliente>()
+                .Update(cliente);
+        }
+
+        public async Task RestaurarClienteAsync(Guid clienteId)
+        {
+            var client = GetClient();
+            var cliente = await client
+                .From<Cliente>()
+                .Where(c => c.Id == clienteId)
+                .Single();
+
+            if (cliente is null) return;
+            cliente.DeletedAt = null;
+
+            await client
+                .From<Cliente>()
+                .Update(cliente);
+        }
+
+        public async Task<List<Cliente>> ObtenerClientesEliminadosAsync()
+        {
+            var client = GetClient();
+            var response = await client
+                .From<Cliente>()
+                .Where(c => c.DeletedAt != null)
+                .Get();
+
+            return response.Models;
         }
 
         // ================== SUSCRIPCIONES ==================
@@ -277,7 +322,10 @@ namespace StreamManager.Services
         public async Task<List<Suscripcion>> ObtenerSuscripcionesAsync()
         {
             var client = GetClient();
-            var response = await client.From<Suscripcion>().Get();
+            var response = await client
+                .From<Suscripcion>()
+                .Where(s => s.DeletedAt == null)  // ← AGREGAR
+                .Get();
             return response.Models;
         }
 

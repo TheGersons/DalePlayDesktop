@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using StreamManager.Views.Dialogs;
 
 namespace StreamManager.Views.Pages
 {
@@ -212,6 +213,26 @@ namespace StreamManager.Views.Pages
             public int Suscripciones { get; set; }
             public string SuscripcionesTexto { get; set; } = string.Empty;
             public Brush Color { get; set; } = Brushes.Blue;
+        }
+
+        private void SuscripcionRapidaButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new SuscripcionRapidaDialog
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                // Recargar datos del dashboard
+                _ = CargarDatosAsync();
+
+                MessageBox.Show(
+                    "✓ Dashboard actualizado con la nueva suscripción",
+                    "Éxito",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
         }
     }
 }
