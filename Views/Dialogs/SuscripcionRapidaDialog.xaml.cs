@@ -14,7 +14,7 @@ namespace StreamManager.Views.Dialogs
         private List<Cliente> _clientes = new();
         private List<CuentaCorreo> _cuentas = new();
         private List<Perfil> _perfiles = new();
-        
+
         private bool _clienteNuevo = false;
         private bool _cuentaNueva = false;
         private bool _perfilNuevo = false;
@@ -78,7 +78,7 @@ namespace StreamManager.Views.Dialogs
             {
                 _clienteNuevo = false;
                 NuevoClientePanel.Visibility = Visibility.Collapsed;
-                
+
                 // Habilitar siguiente paso
                 PlataformaComboBox.IsEnabled = true;
             }
@@ -89,7 +89,7 @@ namespace StreamManager.Views.Dialogs
             _clienteNuevo = true;
             ClienteComboBox.SelectedItem = null;
             NuevoClientePanel.Visibility = Visibility.Visible;
-            
+
             // Habilitar siguiente paso
             PlataformaComboBox.IsEnabled = true;
         }
@@ -103,6 +103,10 @@ namespace StreamManager.Views.Dialogs
                 {
                     LoadingOverlay.Visibility = Visibility.Visible;
 
+                    // ✅ MOSTRAR PRECIO DE LA PLATAFORMA AUTOMÁTICAMENTE
+                    PrecioTextBlock.Text = $"L {plataforma.PrecioBase:N2}";
+                    PrecioTextBlock.Visibility = Visibility.Visible;
+
                     // Cargar cuentas de esta plataforma
                     var todasCuentas = await _supabase.ObtenerCuentasAsync();
                     _cuentas = todasCuentas.Where(c => c.PlataformaId == plataforma.Id).ToList();
@@ -113,7 +117,7 @@ namespace StreamManager.Views.Dialogs
                     _perfiles = todosPerfiles.Where(p => cuentasIds.Contains(p.CuentaId)).ToList();
 
                     ActualizarListaCuentas();
-                    
+
                     // Habilitar siguiente paso
                     CuentaComboBox.IsEnabled = true;
                 }
@@ -162,16 +166,13 @@ namespace StreamManager.Views.Dialogs
             _perfilNuevo = true;
             PerfilComboBox.IsEnabled = false;
             NuevoPerfilPanel.Visibility = Visibility.Visible;
-            
-            // Habilitar precio
-            PrecioTextBox.IsEnabled = true;
         }
 
         private void ActualizarListaPerfiles(List<Perfil> perfiles)
         {
             // Filtrar solo perfiles disponibles
             var perfilesDisponibles = perfiles.Where(p => p.Estado == "disponible").ToList();
-            
+
             PerfilComboBox.ItemsSource = perfilesDisponibles;
             PerfilComboBox.DisplayMemberPath = "NombrePerfil";
             PerfilComboBox.SelectedValuePath = "Id";
@@ -195,9 +196,6 @@ namespace StreamManager.Views.Dialogs
             {
                 _perfilNuevo = false;
                 NuevoPerfilPanel.Visibility = Visibility.Collapsed;
-
-                // Habilitar precio
-                PrecioTextBox.IsEnabled = true;
             }
         }
 
@@ -206,9 +204,6 @@ namespace StreamManager.Views.Dialogs
             _perfilNuevo = true;
             PerfilComboBox.SelectedItem = null;
             NuevoPerfilPanel.Visibility = Visibility.Visible;
-
-            // Habilitar precio
-            PrecioTextBox.IsEnabled = true;
         }
 
         private void CrearPerfilEnCuentaNuevaButton_Click(object sender, RoutedEventArgs e)
@@ -216,14 +211,9 @@ namespace StreamManager.Views.Dialogs
             _perfilNuevo = true;
             NuevoPerfilPanel.Visibility = Visibility.Visible;
             PerfilesAgotadosPanel.Visibility = Visibility.Collapsed;
-
-            // Habilitar precio
-            PrecioTextBox.IsEnabled = true;
         }
 
         // ===== GUARDAR =====
-        // ===== MÉTODO GuardarButton_Click COMPLETO Y CORREGIDO =====
-
         private async void GuardarButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -237,7 +227,8 @@ namespace StreamManager.Views.Dialogs
                 Guid clienteId;
                 Guid cuentaId;
                 Guid perfilId;
-                Guid plataformaId = ((Plataforma)PlataformaComboBox.SelectedItem).Id;
+                var plataforma = (Plataforma)PlataformaComboBox.SelectedItem;
+                Guid plataformaId = plataforma.Id;
 
                 // ============================================
                 // PASO 1: Crear o usar cliente
@@ -246,7 +237,6 @@ namespace StreamManager.Views.Dialogs
                 {
                     var cliente = new Cliente
                     {
-                        // ✅ NO ASIGNAR ID - La DB lo genera
                         NombreCompleto = NuevoClienteNombreTextBox.Text.Trim(),
                         Telefono = NuevoClienteTelefonoTextBox.Text.Trim(),
                         Estado = "activo"
@@ -266,10 +256,9 @@ namespace StreamManager.Views.Dialogs
                 {
                     var cuenta = new CuentaCorreo
                     {
-                        // ✅ NO ASIGNAR ID - La DB lo genera
                         PlataformaId = plataformaId,
                         Email = NuevaCuentaEmailTextBox.Text.Trim(),
-                        Password = NuevaCuentaPasswordTextBox.Password.Trim(), // ✅ .Password no .Text
+                        Password = NuevaCuentaPasswordTextBox.Password.Trim(),
                         Estado = "activo"
                     };
                     var cuentaCreada = await _supabase.CrearCuentaAsync(cuenta);
@@ -287,11 +276,10 @@ namespace StreamManager.Views.Dialogs
                 {
                     var perfil = new Perfil
                     {
-                        // ✅ NO ASIGNAR ID - La DB lo genera
                         CuentaId = cuentaId,
                         NombrePerfil = NuevoPerfilNombreTextBox.Text.Trim(),
                         Pin = NuevoPerfilPinTextBox.Text.Trim(),
-                        Estado = "ocupado" // Se marca como ocupado inmediatamente
+                        Estado = "disponible" // ✅ CORRECCIÓN: Crear como disponible
                     };
                     var perfilCreado = await _supabase.CrearPerfilAsync(perfil);
                     perfilId = perfilCreado.Id;
@@ -299,23 +287,19 @@ namespace StreamManager.Views.Dialogs
                 else
                 {
                     perfilId = ((Perfil)PerfilComboBox.SelectedItem).Id;
-
-                    // Marcar perfil como ocupado
-                    var perfilExistente = _perfiles.First(p => p.Id == perfilId);
-                    perfilExistente.Estado = "ocupado";
-                    await _supabase.ActualizarPerfilAsync(perfilExistente);
+                    // ✅ NO marcar como ocupado manualmente - el trigger lo hará
                 }
 
                 // ============================================
                 // PASO 4: Crear suscripción
                 // ============================================
-                var precio = decimal.Parse(PrecioTextBox.Text);
+                // ✅ CORRECCIÓN: Usar precio de la plataforma
+                var precio = plataforma.PrecioBase;
                 var fechaInicio = FechaInicioDatePicker.SelectedDate ?? DateTime.Today;
                 var fechaProximoPago = fechaInicio.AddMonths(1);
 
                 var suscripcion = new Suscripcion
                 {
-                    // ✅ NO ASIGNAR ID - La DB lo genera
                     ClienteId = clienteId,
                     PerfilId = perfilId,
                     PlataformaId = plataformaId,
@@ -332,7 +316,7 @@ namespace StreamManager.Views.Dialogs
                 MessageBox.Show(
                     "✓ Suscripción creada exitosamente\n\n" +
                     $"Cliente: {(_clienteNuevo ? NuevoClienteNombreTextBox.Text : ((Cliente)ClienteComboBox.SelectedItem).NombreCompleto)}\n" +
-                    $"Plataforma: {((Plataforma)PlataformaComboBox.SelectedItem).Nombre}\n" +
+                    $"Plataforma: {plataforma.Nombre}\n" +
                     $"Precio: L {precio:N2}\n" +
                     $"Próximo pago: {fechaProximoPago:dd/MM/yyyy}",
                     "Suscripción Creada",
@@ -355,6 +339,7 @@ namespace StreamManager.Views.Dialogs
                 LoadingOverlay.Visibility = Visibility.Collapsed;
             }
         }
+
         private bool ValidarDatos()
         {
             // Validar cliente
@@ -410,13 +395,6 @@ namespace StreamManager.Views.Dialogs
                     MessageBox.Show("El nombre del perfil es requerido", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return false;
                 }
-            }
-
-            // Validar precio
-            if (string.IsNullOrWhiteSpace(PrecioTextBox.Text) || !decimal.TryParse(PrecioTextBox.Text, out decimal precio) || precio <= 0)
-            {
-                MessageBox.Show("Debe ingresar un precio válido", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
             }
 
             return true;
