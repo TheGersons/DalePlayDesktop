@@ -83,10 +83,11 @@
                         <DataGridTemplateColumn Header="Icono" Width="80">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <materialDesign:PackIcon Kind="{Binding Icono}" 
-                                                            Width="32" 
-                                                            Height="32"
-                                                            HorizontalAlignment="Center"/>
+                                    <Image Source="{Binding Icono, Converter={StaticResource ImagePathConverter}}"
+                   Width="32" 
+                   Height="32"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

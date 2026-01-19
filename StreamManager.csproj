@@ -73,4 +73,17 @@
     </Compile>
   </ItemGroup>
 
+	<ItemGroup>
+		<Resource Include="Assets\Logos\netflix.png" />
+		<Resource Include="Assets\Logos\disney.png" />
+		<Resource Include="Assets\Logos\hbo.png" />
+		<Resource Include="Assets\Logos\paramount.png" />
+		<Resource Include="Assets\Logos\prime.png" />
+		<Resource Include="Assets\Logos\crunchyroll.png" />
+		<Resource Include="Assets\Logos\spotify.png" />
+		<Resource Include="Assets\Logos\viki.png" />
+		<Resource Include="Assets\Logos\vix.png" />
+		<Resource Include="Assets\Logos\youtube.png" />
+	</ItemGroup>
+
 </Project>

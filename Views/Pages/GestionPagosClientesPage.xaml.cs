@@ -1,6 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using StreamManager.Data.Models;
 using StreamManager.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -16,7 +20,7 @@ namespace StreamManager.Views.Pages
         {
             InitializeComponent();
 
-            _supabase = App.ServiceProvider?.GetRequiredService<SupabaseService>()
+            _supabase = App.ServiceProvider?.GetService<SupabaseService>()
                 ?? throw new InvalidOperationException("SupabaseService no disponible");
 
             Loaded += GestionPagosClientesPage_Loaded;
@@ -31,7 +35,7 @@ namespace StreamManager.Views.Pages
         {
             try
             {
-                LoadingOverlay.Visibility = Visibility.Visible;
+                if (LoadingOverlay != null) LoadingOverlay.Visibility = Visibility.Visible;
 
                 // Obtener todas las suscripciones activas
                 var todasSuscripciones = await _supabase.ObtenerSuscripcionesAsync();
@@ -53,7 +57,7 @@ namespace StreamManager.Views.Pages
             }
             finally
             {
-                LoadingOverlay.Visibility = Visibility.Collapsed;
+                if (LoadingOverlay != null) LoadingOverlay.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -65,32 +69,37 @@ namespace StreamManager.Views.Pages
 
                 // Pendientes de cobro (vencidas)
                 var vencidas = _todasSuscripciones.Where(s => s.FechaProximoPago < hoy).ToList();
-                PendientesCobrarTextBlock.Text = vencidas.Count.ToString();
-                MontoPendienteTextBlock.Text = $"L {vencidas.Sum(s => s.Precio):N2}";
+                if (PendientesCobrarTextBlock != null) PendientesCobrarTextBlock.Text = vencidas.Count.ToString();
+                if (MontoPendienteTextBlock != null) MontoPendienteTextBlock.Text = $"L {vencidas.Sum(s => s.Precio):N2}";
 
                 // Vencen hoy
                 var vencenHoy = _todasSuscripciones.Where(s => s.FechaProximoPago == hoy).ToList();
-                VencenHoyTextBlock.Text = vencenHoy.Count.ToString();
-                MontoHoyTextBlock.Text = $"L {vencenHoy.Sum(s => s.Precio):N2}";
+                if (VencenHoyTextBlock != null) VencenHoyTextBlock.Text = vencenHoy.Count.ToString();
+                if (MontoHoyTextBlock != null) MontoHoyTextBlock.Text = $"L {vencenHoy.Sum(s => s.Precio):N2}";
 
                 // Próximos 7 días
-                var proximos = _todasSuscripciones.Where(s => 
-                    s.FechaProximoPago > hoy && 
+                var proximos = _todasSuscripciones.Where(s =>
+                    s.FechaProximoPago > hoy &&
                     s.FechaProximoPago <= hoy.AddDays(7)).ToList();
-                ProximosTextBlock.Text = proximos.Count.ToString();
-                MontoProximosTextBlock.Text = $"L {proximos.Sum(s => s.Precio):N2}";
 
-                // Cobrado hoy
+                if (ProximosTextBlock != null) ProximosTextBlock.Text = proximos.Count.ToString();
+                if (MontoProximosTextBlock != null) MontoProximosTextBlock.Text = $"L {proximos.Sum(s => s.Precio):N2}";
+
+                // Cobrado hoy (Esta parte sí estaba bien con Task.Run porque usa Dispatcher)
                 Task.Run(async () =>
                 {
-                    var pagos = await _supabase.ObtenerPagosAsync();
-                    var pagosHoy = pagos.Where(p => p.FechaPago.Date == DateTime.Today).ToList();
-
-                    Dispatcher.Invoke(() =>
+                    try
                     {
-                        CobradoHoyTextBlock.Text = $"L {pagosHoy.Sum(p => p.Monto):N2}";
-                        PagosHoyTextBlock.Text = $"{pagosHoy.Count} pago{(pagosHoy.Count == 1 ? "" : "s")}";
-                    });
+                        var pagos = await _supabase.ObtenerPagosAsync();
+                        var pagosHoy = pagos.Where(p => p.FechaPago.Date == DateTime.Today).ToList();
+
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (CobradoHoyTextBlock != null) CobradoHoyTextBlock.Text = $"L {pagosHoy.Sum(p => p.Monto):N2}";
+                            if (PagosHoyTextBlock != null) PagosHoyTextBlock.Text = $"{pagosHoy.Count} pago{(pagosHoy.Count == 1 ? "" : "s")}";
+                        });
+                    }
+                    catch { /* Silenciar error de resumen si falla */ }
                 });
             }
             catch (Exception ex)
@@ -99,12 +108,32 @@ namespace StreamManager.Views.Pages
             }
         }
 
+        // ✅ CORRECCIÓN: Quitamos Task.Run de los eventos para evitar el crash de hilos
+        private async void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                await AplicarFiltrosAsync();
+            }
+        }
+
+        private async void BusquedaTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                await AplicarFiltrosAsync();
+            }
+        }
+
         private async Task AplicarFiltrosAsync()
         {
             try
             {
+                // Validación para evitar crash si los controles no están listos
+                if (EstadoFiltroComboBox == null || BusquedaTextBox == null) return;
+
                 var estadoFiltro = (EstadoFiltroComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "todos";
-                var textoBusqueda = BusquedaTextBox.Text.ToLower();
+                var textoBusqueda = BusquedaTextBox.Text?.ToLower() ?? "";
 
                 var suscripcionesFiltradas = _todasSuscripciones.AsEnumerable();
                 var hoy = DateOnly.FromDateTime(DateTime.Today);
@@ -114,8 +143,8 @@ namespace StreamManager.Views.Pages
                 {
                     "vencidos" => suscripcionesFiltradas.Where(s => s.FechaProximoPago < hoy),
                     "hoy" => suscripcionesFiltradas.Where(s => s.FechaProximoPago == hoy),
-                    "proximos" => suscripcionesFiltradas.Where(s => 
-                        s.FechaProximoPago > hoy && 
+                    "proximos" => suscripcionesFiltradas.Where(s =>
+                        s.FechaProximoPago > hoy &&
                         s.FechaProximoPago <= hoy.AddDays(7)),
                     "activa" => suscripcionesFiltradas.Where(s => s.Estado == "activa"),
                     _ => suscripcionesFiltradas
@@ -136,6 +165,20 @@ namespace StreamManager.Views.Pages
 
                     var diasRestantes = (suscripcion.FechaProximoPago.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
 
+                    // ✅ CORRECCIÓN: Protección contra colores nulos o inválidos
+                    Brush colorPlataforma;
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(plataforma.Color))
+                            colorPlataforma = new SolidColorBrush((Color)ColorConverter.ConvertFromString(plataforma.Color));
+                        else
+                            colorPlataforma = Brushes.Gray;
+                    }
+                    catch
+                    {
+                        colorPlataforma = Brushes.Gray;
+                    }
+
                     var vm = new SuscripcionCobroViewModel
                     {
                         Id = suscripcion.Id,
@@ -143,15 +186,15 @@ namespace StreamManager.Views.Pages
                         ClienteTelefono = cliente.Telefono ?? "Sin teléfono",
                         ClienteIniciales = ObtenerIniciales(cliente.NombreCompleto),
                         PlataformaNombre = plataforma.Nombre,
-                        PlataformaColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString(plataforma.Color)),
+                        PlataformaColor = colorPlataforma,
                         PrecioTexto = $"L {suscripcion.Precio:N2}",
                         FechaProximoPagoTexto = $"Próximo pago: {suscripcion.FechaProximoPago:dd/MM/yyyy}",
                         DiasRestantesTexto = ObtenerTextoDiasRestantes(diasRestantes),
                         DiasRestantesColor = ObtenerColorDiasRestantes(diasRestantes),
                         EstadoPagoTexto = ObtenerEstadoPago(diasRestantes),
                         EstadoColor = ObtenerColorEstadoPago(diasRestantes),
-                        EstadoBackground = diasRestantes < 0 ? 
-                            new SolidColorBrush(Color.FromRgb(255, 245, 245)) : 
+                        EstadoBackground = diasRestantes < 0 ?
+                            new SolidColorBrush(Color.FromRgb(255, 245, 245)) :
                             Brushes.White
                     };
 
@@ -166,29 +209,29 @@ namespace StreamManager.Views.Pages
                     suscripcionesViewModel.Add(vm);
                 }
 
-                if (suscripcionesViewModel.Any())
+                if (SuscripcionesItemsControl != null)
                 {
-                    SuscripcionesItemsControl.ItemsSource = suscripcionesViewModel;
-                    EmptyStatePanel.Visibility = Visibility.Collapsed;
-                }
-                else
-                {
-                    SuscripcionesItemsControl.ItemsSource = null;
-                    EmptyStatePanel.Visibility = Visibility.Visible;
+                    if (suscripcionesViewModel.Any())
+                    {
+                        SuscripcionesItemsControl.ItemsSource = suscripcionesViewModel;
+                        if (EmptyStatePanel != null) EmptyStatePanel.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        SuscripcionesItemsControl.ItemsSource = null;
+                        if (EmptyStatePanel != null) EmptyStatePanel.Visibility = Visibility.Visible;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    $"Error al aplicar filtros: {ex.Message}",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"Error filtros: {ex.Message}");
             }
         }
 
         private string ObtenerIniciales(string nombreCompleto)
         {
+            if (string.IsNullOrEmpty(nombreCompleto)) return "??";
             var palabras = nombreCompleto.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (palabras.Length >= 2)
                 return $"{palabras[0][0]}{palabras[1][0]}".ToUpper();
@@ -205,49 +248,37 @@ namespace StreamManager.Views.Pages
                 return "🔔 Vence HOY";
             if (dias == 1)
                 return "⏰ Vence MAÑANA";
-            
+
             return $"📅 Vence en {dias} días";
         }
 
         private Brush ObtenerColorDiasRestantes(int dias)
         {
-            if (dias < 0)
-                return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
-            if (dias == 0)
-                return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
-            if (dias == 1)
-                return new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Naranja
-            if (dias <= 7)
-                return new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Amarillo
-            
+            if (dias < 0) return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
+            if (dias == 0) return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
+            if (dias == 1) return new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Naranja
+            if (dias <= 7) return new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Amarillo
+
             return new SolidColorBrush(Color.FromRgb(76, 175, 80)); // Verde
         }
 
         private string ObtenerEstadoPago(int dias)
         {
-            if (dias < 0)
-                return "VENCIDO";
-            if (dias == 0)
-                return "VENCE HOY";
-            if (dias <= 3)
-                return "URGENTE";
-            if (dias <= 7)
-                return "PRÓXIMO";
-            
+            if (dias < 0) return "VENCIDO";
+            if (dias == 0) return "VENCE HOY";
+            if (dias <= 3) return "URGENTE";
+            if (dias <= 7) return "PRÓXIMO";
+
             return "AL DÍA";
         }
 
         private Brush ObtenerColorEstadoPago(int dias)
         {
-            if (dias < 0)
-                return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
-            if (dias == 0)
-                return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
-            if (dias <= 3)
-                return new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Naranja
-            if (dias <= 7)
-                return new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Amarillo
-            
+            if (dias < 0) return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
+            if (dias == 0) return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
+            if (dias <= 3) return new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Naranja
+            if (dias <= 7) return new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Amarillo
+
             return new SolidColorBrush(Color.FromRgb(76, 175, 80)); // Verde
         }
 
@@ -276,30 +307,30 @@ namespace StreamManager.Views.Pages
 
                 var stack = new StackPanel { Margin = new Thickness(20) };
 
-                stack.Children.Add(new TextBlock 
-                { 
+                stack.Children.Add(new TextBlock
+                {
                     Text = "REGISTRAR PAGO DE CLIENTE",
                     FontSize = 18,
                     FontWeight = FontWeights.Bold,
                     Margin = new Thickness(0, 0, 0, 20)
                 });
 
-                stack.Children.Add(new TextBlock 
-                { 
+                stack.Children.Add(new TextBlock
+                {
                     Text = $"Cliente: {cliente?.NombreCompleto ?? "N/A"}",
                     FontSize = 14,
                     Margin = new Thickness(0, 0, 0, 8)
                 });
 
-                stack.Children.Add(new TextBlock 
-                { 
+                stack.Children.Add(new TextBlock
+                {
                     Text = $"Plataforma: {plataforma?.Nombre ?? "N/A"}",
                     FontSize = 14,
                     Margin = new Thickness(0, 0, 0, 8)
                 });
 
-                stack.Children.Add(new TextBlock 
-                { 
+                stack.Children.Add(new TextBlock
+                {
                     Text = $"Monto: L {suscripcion.Precio:N2}",
                     FontSize = 18,
                     FontWeight = FontWeights.Bold,
@@ -307,8 +338,8 @@ namespace StreamManager.Views.Pages
                     Margin = new Thickness(0, 0, 0, 20)
                 });
 
-                var metodoCombo = new ComboBox 
-                { 
+                var metodoCombo = new ComboBox
+                {
                     Margin = new Thickness(0, 0, 0, 10),
                     SelectedIndex = 0
                 };
@@ -320,30 +351,30 @@ namespace StreamManager.Views.Pages
                 stack.Children.Add(new TextBlock { Text = "Método de Pago:", FontWeight = FontWeights.SemiBold });
                 stack.Children.Add(metodoCombo);
 
-                var referenciaText = new TextBox 
-                { 
+                var referenciaText = new TextBox
+                {
                     Margin = new Thickness(0, 10, 0, 10)
                 };
                 stack.Children.Add(new TextBlock { Text = "Referencia (opcional):", FontWeight = FontWeights.SemiBold });
                 stack.Children.Add(referenciaText);
 
-                var buttonStack = new StackPanel 
-                { 
+                var buttonStack = new StackPanel
+                {
                     Orientation = Orientation.Horizontal,
                     HorizontalAlignment = HorizontalAlignment.Right,
                     Margin = new Thickness(0, 20, 0, 0)
                 };
 
-                var confirmarBtn = new Button 
-                { 
+                var confirmarBtn = new Button
+                {
                     Content = "CONFIRMAR PAGO",
                     Width = 160,
                     Height = 36,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
 
-                var cancelarBtn = new Button 
-                { 
+                var cancelarBtn = new Button
+                {
                     Content = "CANCELAR",
                     Width = 110,
                     Height = 36
@@ -365,7 +396,7 @@ namespace StreamManager.Views.Pages
                 {
                     try
                     {
-                        LoadingOverlay.Visibility = Visibility.Visible;
+                        if (LoadingOverlay != null) LoadingOverlay.Visibility = Visibility.Visible;
 
                         var metodo = ((ComboBoxItem)metodoCombo.SelectedItem).Tag.ToString();
                         var referencia = referenciaText.Text;
@@ -412,7 +443,7 @@ namespace StreamManager.Views.Pages
                     }
                     finally
                     {
-                        LoadingOverlay.Visibility = Visibility.Collapsed;
+                        if (LoadingOverlay != null) LoadingOverlay.Visibility = Visibility.Collapsed;
                     }
                 }
             }
@@ -432,7 +463,7 @@ namespace StreamManager.Views.Pages
 
                 var cliente = clientes.FirstOrDefault(c => c.Id == suscripcion.ClienteId);
                 var plataforma = plataformas.FirstOrDefault(p => p.Id == suscripcion.PlataformaId);
-                var perfil = suscripcion.PerfilId.HasValue ? 
+                var perfil = suscripcion.PerfilId.HasValue ?
                     perfiles.FirstOrDefault(p => p.Id == suscripcion.PerfilId) : null;
 
                 var pagosSuscripcion = pagos.Where(p => p.SuscripcionId == suscripcion.Id)
@@ -478,22 +509,6 @@ namespace StreamManager.Views.Pages
         private async void RefrescarButton_Click(object sender, RoutedEventArgs e)
         {
             await CargarSuscripcionesAsync();
-        }
-
-        private void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (IsLoaded)
-            {
-                Task.Run(async () => await AplicarFiltrosAsync());
-            }
-        }
-
-        private void BusquedaTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (IsLoaded)
-            {
-                Task.Run(async () => await AplicarFiltrosAsync());
-            }
         }
 
         // ViewModel para suscripciones de cobro

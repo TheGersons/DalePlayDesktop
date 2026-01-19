@@ -12,14 +12,12 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Título -->
         <TextBlock Grid.Row="0"
                    Text="Cobros y Pagos de Clientes" 
                    FontSize="32"
                    FontWeight="Bold"
                    Margin="0,0,0,8"/>
 
-        <!-- Cards de Resumen -->
         <Grid Grid.Row="1" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -28,7 +26,6 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Pendientes de Cobro -->
             <materialDesign:Card Grid.Column="0" Margin="0,0,8,0" Padding="20">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -56,7 +53,6 @@
                 </StackPanel>
             </materialDesign:Card>
 
-            <!-- Vencen Hoy -->
             <materialDesign:Card Grid.Column="1" Margin="0,0,8,0" Padding="20">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -84,7 +80,6 @@
                 </StackPanel>
             </materialDesign:Card>
 
-            <!-- Próximos 7 Días -->
             <materialDesign:Card Grid.Column="2" Margin="0,0,8,0" Padding="20">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -112,7 +107,6 @@
                 </StackPanel>
             </materialDesign:Card>
 
-            <!-- Cobrado Hoy -->
             <materialDesign:Card Grid.Column="3" Padding="20">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -140,14 +134,12 @@
             </materialDesign:Card>
         </Grid>
 
-        <!-- Filtros y búsqueda -->
         <Grid Grid.Row="2" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Búsqueda -->
             <TextBox x:Name="BusquedaTextBox"
                     Grid.Column="0"
                     materialDesign:HintAssist.Hint="Buscar por cliente o plataforma..."
@@ -155,7 +147,6 @@
                     TextChanged="BusquedaTextBox_TextChanged"
                     Margin="0,0,12,0"/>
 
-            <!-- Filtros -->
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <ComboBox x:Name="EstadoFiltroComboBox"
                          materialDesign:HintAssist.Hint="Estado"
@@ -181,7 +172,6 @@
             </StackPanel>
         </Grid>
 
-        <!-- Lista de Suscripciones -->
         <materialDesign:Card Grid.Row="3"
                              Padding="0"
                              materialDesign:ElevationAssist.Elevation="Dp2">
@@ -202,7 +192,6 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Avatar Cliente -->
                                         <Border Grid.Column="0"
                                                Width="56"
                                                Height="56"
@@ -218,13 +207,12 @@
                                                       VerticalAlignment="Center"/>
                                         </Border>
 
-                                        <!-- Información -->
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding ClienteNombre}"
                                                       FontSize="18"
                                                       FontWeight="Bold"
                                                       Margin="0,0,0,4"/>
-                                            
+
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                                 <materialDesign:PackIcon Kind="Phone"
                                                                         Width="14"
@@ -272,7 +260,6 @@
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <!-- Monto -->
                                         <StackPanel Grid.Column="2"
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,20,0">
@@ -287,7 +274,6 @@
                                                       HorizontalAlignment="Right"/>
                                         </StackPanel>
 
-                                        <!-- Acciones -->
                                         <StackPanel Grid.Column="3"
                                                    Orientation="Vertical"
                                                    VerticalAlignment="Center">
@@ -331,7 +317,6 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- Loading overlay -->
                 <Grid x:Name="LoadingOverlay"
                       Background="#80000000"
                       Visibility="Collapsed">
@@ -349,7 +334,6 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Estado vacío -->
                 <StackPanel x:Name="EmptyStatePanel"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"

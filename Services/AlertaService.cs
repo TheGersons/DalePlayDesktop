@@ -1,307 +1,188 @@
 using StreamManager.Data.Models;
+using Supabase;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace StreamManager.Services
 {
     public class AlertaService
     {
         private readonly SupabaseService _supabase;
-        private readonly EmailService _email;
 
-        public AlertaService(SupabaseService supabase, EmailService email)
+        public AlertaService(SupabaseService supabase)
         {
             _supabase = supabase;
-            _email = email;
         }
 
+        /// <summary>
+        /// Genera TODAS las alertas automáticas del sistema
+        /// </summary>
         public async Task GenerarAlertasAutomaticasAsync()
         {
-            await GenerarAlertasCobroClientesAsync();
-            await GenerarAlertasPagoPlataformasAsync();
-        }
-
-        private async Task GenerarAlertasCobroClientesAsync()
-        {
-            var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
-            var suscripcionesActivas = suscripciones.Where(s => s.Estado == "activa").ToList();
-
-            var diasAlerta = new[] { 7, 3, 1, 0 };
-            var hoy = DateOnly.FromDateTime(DateTime.Today);
-
-            foreach (var suscripcion in suscripcionesActivas)
-            {
-                var diasRestantes = suscripcion.FechaProximoPago.DayNumber - hoy.DayNumber;
-
-                // Verificar si necesita alerta
-                if (diasRestantes > 7 && diasRestantes >= 0)
-                    continue; // Aún no necesita alerta
-
-                // Determinar nivel de alerta
-                string nivel;
-                if (diasRestantes >= 7)
-                    nivel = "normal";
-                else if (diasRestantes >= 3)
-                    nivel = "advertencia";
-                else if (diasRestantes >= 1)
-                    nivel = "urgente";
-                else
-                    nivel = "critico";
-
-                // Verificar si ya existe alerta similar reciente
-                var alertasExistentes = await _supabase.ObtenerAlertasAsync();
-                var alertaExistente = alertasExistentes.FirstOrDefault(a =>
-                    a.TipoAlerta == "cobro_cliente" &&
-                    a.EntidadId == suscripcion.Id &&
-                    a.Estado == "pendiente");
-
-                if (alertaExistente == null || alertaExistente.Nivel != nivel)
-                {
-                    // Crear nueva alerta
-                    var mensaje = diasRestantes >= 0
-                        ? $"Cliente debe pagar en {diasRestantes} día(s)"
-                        : $"Pago vencido hace {Math.Abs(diasRestantes)} día(s)";
-
-                    var alerta = new Alerta
-                    {
-                        TipoAlerta = "cobro_cliente",
-                        TipoEntidad = "suscripcion",
-                        EntidadId = suscripcion.Id,
-                        ClienteId = suscripcion.ClienteId,
-                        PlataformaId = suscripcion.PlataformaId,
-                        Nivel = nivel,
-                        DiasRestantes = diasRestantes,
-                        Monto = suscripcion.Precio,
-                        Mensaje = mensaje,
-                        Estado = "pendiente"
-                    };
-
-                    await _supabase.CrearAlertaAsync(alerta);
-
-                    // Si ya pasó fecha límite, actualizar estado de suscripción
-                    if (hoy > suscripcion.FechaLimitePago && suscripcion.Estado != "vencida")
-                    {
-                        suscripcion.Estado = "vencida";
-                        await _supabase.ActualizarSuscripcionAsync(suscripcion);
-                    }
-                }
-            }
-        }
-
-        private async Task GenerarAlertasPagoPlataformasAsync()
-        {
-            var pagosPlataf = await _supabase.ObtenerPagosPlataformaAsync();
-            var pagosPendientes = pagosPlataf.Where(p => p.Estado != "al_dia").ToList();
-
-            var hoy = DateOnly.FromDateTime(DateTime.Today);
-
-            foreach (var pago in pagosPendientes)
-            {
-                var diasRestantes = pago.FechaProximoPago.DayNumber - hoy.DayNumber;
-
-                // Verificar si necesita alerta
-                if (diasRestantes > 7 && diasRestantes >= 0)
-                    continue;
-
-                // Determinar nivel
-                string nivel;
-                if (diasRestantes >= 7)
-                    nivel = "normal";
-                else if (diasRestantes >= 3)
-                    nivel = "advertencia";
-                else if (diasRestantes >= 1)
-                    nivel = "urgente";
-                else
-                    nivel = "critico";
-
-                // Verificar alerta existente
-                var alertasExistentes = await _supabase.ObtenerAlertasAsync();
-                var alertaExistente = alertasExistentes.FirstOrDefault(a =>
-                    a.TipoAlerta == "pago_plataforma" &&
-                    a.EntidadId == pago.Id &&
-                    a.Estado == "pendiente");
-
-                if (alertaExistente == null || alertaExistente.Nivel != nivel)
-                {
-                    var mensaje = diasRestantes >= 0
-                        ? $"Pagar plataforma en {diasRestantes} día(s)"
-                        : $"Pago a plataforma vencido hace {Math.Abs(diasRestantes)} día(s)";
-
-                    var alerta = new Alerta
-                    {
-                        TipoAlerta = "pago_plataforma",
-                        TipoEntidad = "pago_plataforma",
-                        EntidadId = pago.Id,
-                        PlataformaId = pago.PlataformaId,
-                        Nivel = nivel,
-                        DiasRestantes = diasRestantes,
-                        Monto = pago.MontoMensual,
-                        Mensaje = mensaje,
-                        Estado = "pendiente"
-                    };
-
-                    await _supabase.CrearAlertaAsync(alerta);
-
-                    // Actualizar estado del pago
-                    if (hoy > pago.FechaLimitePago)
-                    {
-                        pago.Estado = "vencido";
-                        await _supabase.ActualizarPagoPlataformaAsync(pago);
-                    }
-                    else if (diasRestantes <= 7)
-                    {
-                        pago.Estado = "por_pagar";
-                        await _supabase.ActualizarPagoPlataformaAsync(pago);
-                    }
-                }
-            }
-        }
-
-        public async Task EnviarEmailsAlertasPendientesAsync()
-        {
-            var alertasPendientes = await _supabase.ObtenerAlertasPendientesAsync();
-
-            foreach (var alerta in alertasPendientes)
-            {
-                bool enviado = false;
-
-                if (alerta.TipoAlerta == "cobro_cliente")
-                {
-                    enviado = await EnviarEmailCobroClienteAsync(alerta);
-                }
-                else if (alerta.TipoAlerta == "pago_plataforma")
-                {
-                    enviado = await EnviarEmailPagoPlataformaAsync(alerta);
-                }
-
-                if (enviado)
-                {
-                    alerta.Estado = "enviada";
-                    alerta.FechaEnvioEmail = DateTime.Now;
-                    await _supabase.ActualizarAlertaAsync(alerta);
-                }
-            }
-        }
-
-        private async Task<bool> EnviarEmailCobroClienteAsync(Alerta alerta)
-        {
-            try
-            {
-                // Obtener datos completos
-                var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
-                var suscripcion = suscripciones.FirstOrDefault(s => s.Id == alerta.EntidadId);
-
-                if (suscripcion == null)
-                    return false;
-
-                var clientes = await _supabase.ObtenerClientesAsync();
-                var cliente = clientes.FirstOrDefault(c => c.Id == suscripcion.ClienteId);
-
-                var plataformas = await _supabase.ObtenerPlataformasAsync();
-                var plataforma = plataformas.FirstOrDefault(p => p.Id == suscripcion.PlataformaId);
-
-                var perfilNombre = "Cuenta Completa";
-                if (suscripcion.PerfilId.HasValue)
-                {
-                    var perfiles = await _supabase.ObtenerPerfilesAsync();
-                    var perfil = perfiles.FirstOrDefault(p => p.Id == suscripcion.PerfilId);
-                    perfilNombre = perfil?.NombrePerfil ?? perfilNombre;
-                }
-
-                if (cliente == null || plataforma == null)
-                    return false;
-
-                return await _email.EnviarAlertaCobroClienteAsync(
-                    cliente.NombreCompleto,
-                    cliente.Telefono,
-                    plataforma.Nombre,
-                    perfilNombre,
-                    suscripcion.Precio,
-                    suscripcion.FechaProximoPago.ToDateTime(TimeOnly.MinValue),
-                    alerta.DiasRestantes ?? 0,
-                    alerta.Nivel
-                );
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private async Task<bool> EnviarEmailPagoPlataformaAsync(Alerta alerta)
-        {
-            try
-            {
-                var pagosPlataf = await _supabase.ObtenerPagosPlataformaAsync();
-                var pago = pagosPlataf.FirstOrDefault(p => p.Id == alerta.EntidadId);
-
-                if (pago == null)
-                    return false;
-
-                var cuentas = await _supabase.ObtenerCuentasAsync();
-                var cuenta = cuentas.FirstOrDefault(c => c.Id == pago.CuentaId);
-
-                var plataformas = await _supabase.ObtenerPlataformasAsync();
-                var plataforma = plataformas.FirstOrDefault(p => p.Id == pago.PlataformaId);
-
-                if (cuenta == null || plataforma == null)
-                    return false;
-
-                return await _email.EnviarAlertaPagoPlataformaAsync(
-                    plataforma.Nombre,
-                    cuenta.Email,
-                    pago.MontoMensual,
-                    pago.FechaProximoPago.ToDateTime(TimeOnly.MinValue),
-                    alerta.DiasRestantes ?? 0,
-                    pago.MetodoPagoPreferido
-                );
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        public async Task MarcarAlertaComoLeidaAsync(Guid alertaId)
-        {
-            var alertas = await _supabase.ObtenerAlertasAsync();
-            var alerta = alertas.FirstOrDefault(a => a.Id == alertaId);
-
-            if (alerta != null)
-            {
-                alerta.Estado = "leida";
-                await _supabase.ActualizarAlertaAsync(alerta);
-            }
-        }
-
-        public async Task ResolverAlertaAsync(Guid alertaId)
-        {
-            var alertas = await _supabase.ObtenerAlertasAsync();
-            var alerta = alertas.FirstOrDefault(a => a.Id == alertaId);
-
-            if (alerta != null)
-            {
-                alerta.Estado = "resuelta";
-                await _supabase.ActualizarAlertaAsync(alerta);
-            }
+            await GenerarAlertasCobrosAsync();
+            await GenerarAlertasPagosPlataformaAsync();
+            // Agregar otras generaciones de alertas aquí si es necesario
         }
 
         /// <summary>
-        /// Obtener conteo de alertas pendientes
+        /// Genera alertas de cobros a clientes
+        /// ✅ SOLO para suscripciones vencidas o que vencen HOY
         /// </summary>
-        public async Task<int> ObtenerConteoAlertasPendientesAsync()
+        public async Task GenerarAlertasCobrosAsync()
         {
             try
             {
-                var alertas = await _supabase.ObtenerAlertasAsync();
-                return alertas.Count(a => a.Estado == "pendiente");
+                var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
+                var suscripcionesActivas = suscripciones.Where(s => s.Estado == "activa").ToList();
+
+                var fechaHoy = DateOnly.FromDateTime(DateTime.Today);
+
+                foreach (var suscripcion in suscripcionesActivas)
+                {
+                    var diasRestantes = (suscripcion.FechaProximoPago.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
+
+                    // ✅ SOLO generar alertas si diasRestantes <= 0
+                    if (diasRestantes <= 0)
+                    {
+                        var alertas = await _supabase.ObtenerAlertasAsync();
+                        var alertaExistente = alertas.FirstOrDefault(a =>
+                            a.TipoAlerta == "cobro_cliente" &&
+                            a.EntidadId == suscripcion.Id &&
+                            a.Estado == "pendiente");
+
+                        if (alertaExistente == null)
+                        {
+                            string nivel;
+                            string mensaje;
+
+                            if (diasRestantes < 0)
+                            {
+                                // VENCIDA
+                                nivel = "critico";
+                                var diasVencidos = Math.Abs(diasRestantes);
+                                mensaje = diasVencidos == 1
+                                    ? $"Pago vencido hace 1 día - L {suscripcion.Precio:N2}"
+                                    : $"Pago vencido hace {diasVencidos} días - L {suscripcion.Precio:N2}";
+                            }
+                            else
+                            {
+                                // VENCE HOY
+                                nivel = "critico";
+                                mensaje = $"Cliente debe pagar HOY - L {suscripcion.Precio:N2}";
+                            }
+
+                            var alerta = new Alerta
+                            {
+                                TipoAlerta = "cobro_cliente",
+                                TipoEntidad = "suscripcion",
+                                EntidadId = suscripcion.Id,
+                                ClienteId = suscripcion.ClienteId,
+                                PlataformaId = suscripcion.PlataformaId,
+                                Nivel = nivel,
+                                DiasRestantes = diasRestantes,
+                                Monto = suscripcion.Precio,
+                                Mensaje = mensaje,
+                                Estado = "pendiente",
+                                FechaCreacion = DateTime.Now
+                            };
+
+                            await _supabase.CrearAlertaAsync(alerta);
+                        }
+                    }
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return 0;
+                throw new Exception($"Error al generar alertas de cobros: {ex.Message}", ex);
             }
         }
 
         /// <summary>
-        /// Marcar todas las alertas como leídas
+        /// Genera alertas de pagos pendientes a plataformas
+        /// ✅ CORREGIDO: Usa fecha_proximo_pago y estados correctos
+        /// </summary>
+        public async Task GenerarAlertasPagosPlataformaAsync()
+        {
+            try
+            {
+                var pagosPendientes = await _supabase.ObtenerPagosPlataformaAsync();
+                // ✅ CORRECCIÓN: Los estados son "por_pagar" o "vencido", no "pendiente"
+                var pendientes = pagosPendientes.Where(p =>
+                    p.Estado == "por_pagar" || p.Estado == "vencido").ToList();
+
+                foreach (var pago in pendientes)
+                {
+                    // ✅ CORRECCIÓN: El campo es FechaProximoPago, no FechaPago
+                    var diasRestantes = (pago.FechaProximoPago.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
+
+                    if (diasRestantes <= 7)
+                    {
+                        var alertas = await _supabase.ObtenerAlertasAsync();
+                        var alertaExistente = alertas.FirstOrDefault(a =>
+                            a.TipoAlerta == "pago_plataforma" &&
+                            a.EntidadId == pago.Id &&
+                            a.Estado == "pendiente");
+
+                        if (alertaExistente == null)
+                        {
+                            string nivel;
+                            string mensaje;
+
+                            if (diasRestantes < 0)
+                            {
+                                nivel = "critico";
+                                var diasVencidos = Math.Abs(diasRestantes);
+                                mensaje = diasVencidos == 1
+                                    ? $"Pago a plataforma vencido hace 1 día - L {pago.MontoMensual:N2}"
+                                    : $"Pago a plataforma vencido hace {diasVencidos} días - L {pago.MontoMensual:N2}";
+                            }
+                            else if (diasRestantes == 0)
+                            {
+                                nivel = "critico";
+                                mensaje = $"Pago a plataforma vence HOY - L {pago.MontoMensual:N2}";
+                            }
+                            else if (diasRestantes <= 3)
+                            {
+                                nivel = "urgente";
+                                mensaje = diasRestantes == 1
+                                    ? $"Pago a plataforma vence mañana - L {pago.MontoMensual:N2}"
+                                    : $"Pago a plataforma en {diasRestantes} días - L {pago.MontoMensual:N2}";
+                            }
+                            else
+                            {
+                                nivel = "advertencia";
+                                mensaje = $"Pago a plataforma en {diasRestantes} días - L {pago.MontoMensual:N2}";
+                            }
+
+                            var alerta = new Alerta
+                            {
+                                TipoAlerta = "pago_plataforma",
+                                TipoEntidad = "pago_plataforma",
+                                EntidadId = pago.Id,
+                                PlataformaId = pago.PlataformaId,
+                                Nivel = nivel,
+                                DiasRestantes = diasRestantes,
+                                Monto = pago.MontoMensual,
+                                Mensaje = mensaje,
+                                Estado = "pendiente",
+                                FechaCreacion = DateTime.Now
+                            };
+
+                            await _supabase.CrearAlertaAsync(alerta);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al generar alertas de pagos a plataforma: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Marca todas las alertas como leídas (para limpiar badge)
         /// </summary>
         public async Task MarcarTodasComoLeidasAsync()
         {
@@ -318,22 +199,21 @@ namespace StreamManager.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al marcar todas como leídas: {ex.Message}");
+                throw new Exception($"Error al marcar todas como leídas: {ex.Message}", ex);
             }
         }
 
         /// <summary>
-        /// Eliminar alertas leídas/resueltas con más de 30 días
+        /// Limpia alertas antiguas (resueltas o leídas hace más de 30 días)
         /// </summary>
         public async Task LimpiarAlertasAntiguasAsync()
         {
             try
             {
-                var fechaLimite = DateTime.Now.AddDays(-30);
                 var alertas = await _supabase.ObtenerAlertasAsync();
                 var alertasAntiguas = alertas.Where(a =>
-                    a.FechaCreacion < fechaLimite &&
-                    (a.Estado == "leida" || a.Estado == "resuelta")).ToList();
+                    (a.Estado == "resuelta" || a.Estado == "leida") &&
+                    a.FechaCreacion < DateTime.Now.AddDays(-30)).ToList();
 
                 foreach (var alerta in alertasAntiguas)
                 {
@@ -342,8 +222,128 @@ namespace StreamManager.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al limpiar alertas antiguas: {ex.Message}");
+                throw new Exception($"Error al limpiar alertas antiguas: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Limpia alertas resueltas (cuando las suscripciones fueron pagadas)
+        /// </summary>
+        public async Task LimpiarAlertasResueltasAsync()
+        {
+            try
+            {
+                var alertas = await _supabase.ObtenerAlertasAsync();
+                var alertasPendientes = alertas.Where(a => a.Estado == "pendiente").ToList();
+
+                var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
+
+                foreach (var alerta in alertasPendientes)
+                {
+                    if (alerta.TipoAlerta == "cobro_cliente")
+                    {
+                        var suscripcion = suscripciones.FirstOrDefault(s => s.Id == alerta.EntidadId);
+                        if (suscripcion != null)
+                        {
+                            var diasRestantes = (suscripcion.FechaProximoPago.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
+                            if (diasRestantes > 0)
+                            {
+                                alerta.Estado = "resuelta";
+                                await _supabase.ActualizarAlertaAsync(alerta);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al limpiar alertas resueltas: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Resuelve una alerta específica
+        /// </summary>
+        public async Task ResolverAlertaAsync(Guid alertaId)
+        {
+            try
+            {
+                var alertas = await _supabase.ObtenerAlertasAsync();
+                var alerta = alertas.FirstOrDefault(a => a.Id == alertaId);
+
+                if (alerta != null)
+                {
+                    alerta.Estado = "resuelta";
+                    await _supabase.ActualizarAlertaAsync(alerta);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al resolver alerta: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Marca una alerta como leída
+        /// </summary>
+        public async Task MarcarAlertaComoLeidaAsync(Guid alertaId)
+        {
+            var alertas = await _supabase.ObtenerAlertasAsync();
+            var alerta = alertas.FirstOrDefault(a => a.Id == alertaId);
+
+            if (alerta != null)
+            {
+                alerta.Estado = "leida";
+                await _supabase.ActualizarAlertaAsync(alerta);
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el conteo de alertas pendientes (para el badge)
+        /// </summary>
+        public async Task<int> ObtenerConteoAlertasPendientesAsync()
+        {
+            var alertas = await _supabase.ObtenerAlertasAsync();
+            return alertas.Count(a => a.Estado == "pendiente");
+        }
+
+        /// <summary>
+        /// Obtiene alertas pendientes ordenadas por prioridad
+        /// </summary>
+        public async Task<List<Alerta>> ObtenerAlertasPendientesAsync()
+        {
+            var alertas = await _supabase.ObtenerAlertasAsync();
+            return alertas
+                .Where(a => a.Estado == "pendiente")
+                .OrderBy(a => GetPrioridadNivel(a.Nivel))
+                .ThenBy(a => a.DiasRestantes)
+                .ThenByDescending(a => a.FechaCreacion)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Obtiene alertas por tipo específico
+        /// </summary>
+        public async Task<List<Alerta>> ObtenerAlertasPorTipoAsync(string tipoAlerta)
+        {
+            var alertas = await _supabase.ObtenerAlertasAsync();
+            return alertas
+                .Where(a => a.TipoAlerta == tipoAlerta && a.Estado == "pendiente")
+                .OrderBy(a => GetPrioridadNivel(a.Nivel))
+                .ThenBy(a => a.DiasRestantes)
+                .ToList();
+        }
+
+        private int GetPrioridadNivel(string nivel)
+        {
+            return nivel switch
+            {
+                "critico" => 1,
+                "urgente" => 2,
+                "advertencia" => 3,
+                "normal" => 4,
+                _ => 5
+            };
         }
     }
 }

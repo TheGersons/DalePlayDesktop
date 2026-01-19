@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="Cuenta de Correo"
-        Height="550"
+        Height="600"
         Width="550"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="{DynamicResource MaterialDesignPaper}">
+        Style="{StaticResource MaterialDesignWindow}">
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -18,76 +18,127 @@
 
         <!-- Título -->
         <TextBlock x:Name="TituloTextBlock"
-                   Grid.Row="0"
                    Text="Nueva Cuenta de Correo"
-                   FontSize="24"
-                   FontWeight="Bold"
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                    Margin="0,0,0,24"/>
 
-        <!-- Formulario -->
+        <!-- Contenido con scroll -->
         <ScrollViewer Grid.Row="1" 
-                      VerticalScrollBarVisibility="Auto">
+                     VerticalScrollBarVisibility="Auto"
+                     Margin="0,0,0,16">
             <StackPanel>
-                <!-- Plataforma -->
-                <ComboBox x:Name="PlataformaComboBox"
-                         materialDesign:HintAssist.Hint="Plataforma *"
-                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                         DisplayMemberPath="Nombre"
-                         Margin="0,0,0,16"/>
+                <!-- Sección: Datos de la cuenta -->
+                <materialDesign:Card Padding="16" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Datos de la Cuenta"
+                                  FontSize="16"
+                                  FontWeight="SemiBold"
+                                  Margin="0,0,0,16"/>
 
-                <!-- Correo Electrónico -->
-                <TextBox x:Name="CorreoTextBox"
-                        materialDesign:HintAssist.Hint="Correo Electrónico *"
-                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                        Margin="0,0,0,16"
-                        MaxLength="200"/>
+                        <!-- Plataforma -->
+                        <ComboBox x:Name="PlataformaComboBox"
+                                 materialDesign:HintAssist.Hint="Plataforma *"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 DisplayMemberPath="Nombre"
+                                 Margin="0,0,0,16"/>
 
-                <!-- Contraseña -->
-                <TextBox x:Name="ContraseñaTextBox"
-                        materialDesign:HintAssist.Hint="Contraseña *"
-                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                        Margin="0,0,0,16"
-                        MaxLength="200"/>
+                        <!-- Correo -->
+                        <TextBox x:Name="CorreoTextBox"
+                                materialDesign:HintAssist.Hint="Correo electrónico *"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Margin="0,0,0,16"/>
 
-                <TextBlock Text="💡 Tip: Guarda la contraseña de forma segura"
-                          FontSize="12"
-                          Opacity="0.7"
-                          Margin="0,-12,0,16"/>
+                        <!-- Contraseña -->
+                        <TextBox x:Name="ContraseñaTextBox"
+                                materialDesign:HintAssist.Hint="Contraseña *"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Margin="0,0,0,16"/>
 
-                <!-- Estado -->
-                <ComboBox x:Name="EstadoComboBox"
-                         materialDesign:HintAssist.Hint="Estado *"
-                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                         Margin="0,0,0,16">
-                    <ComboBoxItem Content="Activa" Tag="activa" IsSelected="True"/>
-                    <ComboBoxItem Content="Inactiva" Tag="inactiva"/>
-                </ComboBox>
+                        <!-- Estado -->
+                        <ComboBox x:Name="EstadoComboBox"
+                                 materialDesign:HintAssist.Hint="Estado"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 SelectedIndex="0"
+                                 Margin="0,0,0,16">
+                            <ComboBoxItem Content="Activa" Tag="activo"/>
+                            <ComboBoxItem Content="Inactiva" Tag="inactivo"/>
+                        </ComboBox>
 
-                <!-- Notas -->
-                <TextBox x:Name="NotasTextBox"
-                        materialDesign:HintAssist.Hint="Notas"
-                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                        AcceptsReturn="True"
-                        TextWrapping="Wrap"
-                        VerticalScrollBarVisibility="Auto"
-                        MinHeight="80"
-                        MaxLength="1000"/>
+                        <!-- Notas -->
+                        <TextBox x:Name="NotasTextBox"
+                                materialDesign:HintAssist.Hint="Notas (opcional)"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                TextWrapping="Wrap"
+                                AcceptsReturn="True"
+                                MinLines="2"
+                                MaxLines="4"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Sección: Pago a Plataforma -->
+                <materialDesign:Card Padding="16">
+                    <StackPanel>
+                        <CheckBox x:Name="RegistrarPagoCheckBox"
+                                 Content="Esta cuenta genera pago mensual a la plataforma"
+                                 FontWeight="SemiBold"
+                                 Margin="0,0,0,16"
+                                 IsChecked="True"
+                                 Checked="RegistrarPagoCheckBox_Checked"
+                                 Unchecked="RegistrarPagoCheckBox_Unchecked"/>
+
+                        <!-- Panel de datos de pago (visible por defecto) -->
+                        <StackPanel x:Name="DatosPagoPanel">
+
+                            <Border Background="#FFF3E0"
+                                   CornerRadius="4"
+                                   Padding="12"
+                                   Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="💡 Información del Pago"
+                                              FontWeight="SemiBold"
+                                              Margin="0,0,0,4"/>
+                                    <TextBlock Text="Define cuánto pagas mensualmente a la plataforma por esta cuenta"
+                                              TextWrapping="Wrap"
+                                              FontSize="12"
+                                              Opacity="0.7"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Monto mensual -->
+                            <TextBox x:Name="MontoMensualTextBox"
+                                    materialDesign:HintAssist.Hint="Monto mensual (L) *"
+                                    Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                    PreviewTextInput="NumeroTextBox_PreviewTextInput"
+                                    Margin="0,0,0,16"/>
+
+                            <!-- Fecha de próximo pago -->
+                            <DatePicker x:Name="FechaProximoPagoDatePicker"
+                                       materialDesign:HintAssist.Hint="Fecha de próximo pago *"
+                                       Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                       Margin="0,0,0,16"/>
+
+                        </StackPanel>
+                    </StackPanel>
+                </materialDesign:Card>
             </StackPanel>
         </ScrollViewer>
 
         <!-- Botones -->
         <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="0,16,0,0">
-            <Button Content="CANCELAR"
-                    Style="{StaticResource MaterialDesignFlatButton}"
-                    Click="CancelarButton_Click"
-                    Margin="0,0,8,0"/>
+                   Orientation="Horizontal"
+                   HorizontalAlignment="Right">
+            <Button x:Name="CancelarButton"
+                   Content="CANCELAR"
+                   Style="{StaticResource MaterialDesignFlatButton}"
+                   Click="CancelarButton_Click"
+                   Width="120"
+                   Margin="0,0,12,0"/>
+
             <Button x:Name="GuardarButton"
-                    Content="GUARDAR"
-                    Style="{StaticResource MaterialDesignRaisedButton}"
-                    Click="GuardarButton_Click"/>
+                   Content="GUARDAR"
+                   Style="{StaticResource MaterialDesignRaisedButton}"
+                   Click="GuardarButton_Click"
+                   Width="120"/>
         </StackPanel>
     </Grid>
 </Window>

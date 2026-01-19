@@ -5,19 +5,21 @@
              xmlns:converters="clr-namespace:StreamManager.Converters"
              StartupUri="Views/LoginWindow.xaml">
     <Application.Resources>
+
         <ResourceDictionary>
+
             <ResourceDictionary.MergedDictionaries>
                 <!-- Material Design -->
                 <materialDesign:BundledTheme BaseTheme="Light" 
                                              PrimaryColor="Blue" 
                                              SecondaryColor="Amber" />
-
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Converters -->
             <converters:EstadoColorConverter x:Key="EstadoColorConverter"/>
             <converters:BooleanToYesNoConverter x:Key="BooleanToYesNoConverter"/>
+            <converters:ImagePathConverter x:Key="ImagePathConverter"/>
 
             <!-- Estilos Globales -->
             <SolidColorBrush x:Key="PrimaryBrush" Color="#2196F3"/>

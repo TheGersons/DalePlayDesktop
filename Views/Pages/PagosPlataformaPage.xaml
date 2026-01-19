@@ -219,12 +219,10 @@
                                                Background="{Binding PlataformaColor}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,20,0">
-                                            <materialDesign:PackIcon Kind="{Binding PlataformaIcono}"
-                                                                    Width="28"
-                                                                    Height="28"
-                                                                    Foreground="White"
-                                                                    HorizontalAlignment="Center"
-                                                                    VerticalAlignment="Center"/>
+                                            <Image Source="{Binding PlataformaIcono, Converter={StaticResource ImagePathConverter}}"
+                                                   Width="32"
+                                                   Height="32"
+                                                   Stretch="Uniform"/>
                                         </Border>
 
                                         <!-- Información -->

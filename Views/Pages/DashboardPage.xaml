@@ -5,6 +5,7 @@
       Title="Dashboard">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
+        
         <Grid Margin="24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -370,11 +371,12 @@
                     </StackPanel>
                 </materialDesign:Card>
             </Grid>
-
             <!-- Plataformas Populares -->
             <materialDesign:Card Grid.Row="3"
                                 Padding="24"
                                 materialDesign:ElevationAssist.Elevation="Dp2">
+               
+
                 <StackPanel>
                     <TextBlock Text="Plataformas Más Usadas"
                               FontSize="20"
@@ -390,26 +392,33 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <materialDesign:Card Margin="0,0,16,0"
-                                                    Padding="20"
-                                                    materialDesign:ElevationAssist.Elevation="Dp1">
+                            Padding="20"
+                            materialDesign:ElevationAssist.Elevation="Dp1">
                                     <StackPanel HorizontalAlignment="Center">
-                                        <materialDesign:PackIcon Kind="{Binding Icono}"
-                                                                Width="48"
-                                                                Height="48"
-                                                                HorizontalAlignment="Center"
-                                                                Foreground="{Binding Color}"/>
+                                        <!-- Logo con fondo gris claro -->
+                                        <Border Background="#F5F5F5"
+                        CornerRadius="12"
+                        Padding="12"
+                        Width="72"
+                        Height="72">
+                                            <Image Source="{Binding Icono, Converter={StaticResource ImagePathConverter}}"
+                           Stretch="Uniform"/>
+                                        </Border>
+
                                         <TextBlock Text="{Binding Nombre}"
-                                                  FontWeight="SemiBold"
-                                                  HorizontalAlignment="Center"
-                                                  Margin="0,12,0,4"/>
+                          FontWeight="SemiBold"
+                          HorizontalAlignment="Center"
+                          Margin="0,12,0,4"/>
+
                                         <TextBlock Text="{Binding SuscripcionesTexto}"
-                                                  FontSize="12"
-                                                  Opacity="0.6"
-                                                  HorizontalAlignment="Center"/>
+                          FontSize="12"
+                          Opacity="0.6"
+                          HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </materialDesign:Card>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
+
                     </ItemsControl>
                 </StackPanel>
             </materialDesign:Card>

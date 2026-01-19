@@ -12,7 +12,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="150"/>
-            <RowDefinition Height="600"/>
+            <RowDefinition Height="530"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
