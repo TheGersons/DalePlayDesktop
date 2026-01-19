@@ -52,10 +52,14 @@ namespace StreamManager.Services
             }
         }
 
-        private SupabaseClient GetClient()
+        /// <summary>
+        /// Obtiene el cliente de Supabase para operaciones avanzadas.
+        /// Consolidado en un único método público.
+        /// </summary>
+        public SupabaseClient GetClient()
         {
             if (_client == null)
-                throw new InvalidOperationException("Cliente Supabase no inicializado");
+                throw new InvalidOperationException("Cliente Supabase no inicializado. Llama a InicializarAsync() primero.");
             return _client;
         }
 
@@ -73,8 +77,6 @@ namespace StreamManager.Services
                 Debug.WriteLine("[LOGIN] Consultando base de datos...");
                 var response = await table.Where(x => x.Email == email).Get();
 
-                Debug.WriteLine($"[LOGIN] Registros encontrados: {response.Models.Count}");
-
                 var usuario = response.Models.FirstOrDefault();
 
                 if (usuario == null)
@@ -83,15 +85,8 @@ namespace StreamManager.Services
                     return false;
                 }
 
-                Debug.WriteLine($"[LOGIN] Usuario encontrado: {usuario.NombreCompleto}");
-                Debug.WriteLine($"[LOGIN] Estado: {usuario.Estado}");
-                Debug.WriteLine($"[LOGIN] Rol: {usuario.Rol}");
-                Debug.WriteLine($"[LOGIN] Hash almacenado: {usuario.PasswordHash.Substring(0, 20)}...");
-
                 Debug.WriteLine("[LOGIN] Verificando contraseña...");
                 bool passwordValido = BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash);
-
-                Debug.WriteLine($"[LOGIN] Contraseña válida: {passwordValido}");
 
                 if (!passwordValido)
                 {
@@ -107,7 +102,6 @@ namespace StreamManager.Services
 
                 _usuarioActual = usuario;
 
-                Debug.WriteLine("[LOGIN] Actualizando fecha último acceso...");
                 usuario.FechaUltimoAcceso = DateTime.Now;
                 await table.Update(usuario);
 
@@ -117,7 +111,6 @@ namespace StreamManager.Services
             catch (Exception ex)
             {
                 Debug.WriteLine($"[LOGIN ERROR] Excepción: {ex.Message}");
-                Debug.WriteLine($"[LOGIN ERROR] StackTrace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -164,7 +157,7 @@ namespace StreamManager.Services
             var client = GetClient();
             var response = await client
                 .From<CuentaCorreo>()
-                .Where(c => c.DeletedAt == null)  // ← AGREGAR
+                .Where(c => c.DeletedAt == null)
                 .Get();
             return response.Models;
         }
@@ -204,7 +197,7 @@ namespace StreamManager.Services
             var client = GetClient();
             var response = await client
                 .From<Perfil>()
-                .Where(p => p.DeletedAt == null)  // ← AGREGAR
+                .Where(p => p.DeletedAt == null)
                 .Get();
             return response.Models;
         }
@@ -256,7 +249,7 @@ namespace StreamManager.Services
             var client = GetClient();
             var response = await client
                 .From<Cliente>()
-                .Where(c => c.DeletedAt == null)  // ← AGREGAR ESTO
+                .Where(c => c.DeletedAt == null)
                 .Get();
             return response.Models;
         }
@@ -285,9 +278,7 @@ namespace StreamManager.Services
             if (cliente is null) return;
             cliente.DeletedAt = DateTime.UtcNow;
 
-            await client
-                .From<Cliente>()
-                .Update(cliente);
+            await client.From<Cliente>().Update(cliente);
         }
 
         public async Task RestaurarClienteAsync(Guid clienteId)
@@ -301,9 +292,7 @@ namespace StreamManager.Services
             if (cliente is null) return;
             cliente.DeletedAt = null;
 
-            await client
-                .From<Cliente>()
-                .Update(cliente);
+            await client.From<Cliente>().Update(cliente);
         }
 
         public async Task<List<Cliente>> ObtenerClientesEliminadosAsync()
@@ -324,7 +313,7 @@ namespace StreamManager.Services
             var client = GetClient();
             var response = await client
                 .From<Suscripcion>()
-                .Where(s => s.DeletedAt == null)  // ← AGREGAR
+                .Where(s => s.DeletedAt == null)
                 .Get();
             return response.Models;
         }

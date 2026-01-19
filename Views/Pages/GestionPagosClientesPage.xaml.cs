@@ -416,6 +416,12 @@ namespace StreamManager.Views.Pages
 
                         await _supabase.CrearPagoAsync(pago);
 
+                        var alertaService = App.ServiceProvider?.GetRequiredService<AlertaService>();
+                        if (alertaService != null)
+                        {
+                            await alertaService.ResolverAlertasCobroClienteAsync(suscripcion.Id);
+                        }
+
                         // Renovar suscripción
                         suscripcion.FechaProximoPago = suscripcion.FechaProximoPago.AddMonths(1);
                         suscripcion.FechaLimitePago = suscripcion.FechaProximoPago.AddDays(5);

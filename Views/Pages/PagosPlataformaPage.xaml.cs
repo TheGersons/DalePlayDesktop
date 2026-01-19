@@ -290,6 +290,12 @@ namespace StreamManager.Views.Pages
 
                         await _supabase.ActualizarPagoPlataformaAsync(pago);
 
+                        var alertaService = App.ServiceProvider?.GetRequiredService<AlertaService>();
+                        if (alertaService != null)
+                        {
+                            await alertaService.ResolverAlertasPagoPlataformaAsync(pago.Id);
+                        }
+
                         MessageBox.Show(
                             "Pago registrado exitosamente.\n\n" +
                             $"Próximo pago: {pago.FechaProximoPago:dd/MM/yyyy}",
