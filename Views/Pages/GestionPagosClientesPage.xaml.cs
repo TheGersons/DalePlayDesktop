@@ -15,6 +15,7 @@ namespace StreamManager.Views.Pages
     {
         private readonly SupabaseService _supabase;
         private List<Suscripcion> _todasSuscripciones = new();
+        private List<Plataforma> _todasPlataformas = new();
 
         public GestionPagosClientesPage()
         {
@@ -41,6 +42,11 @@ namespace StreamManager.Views.Pages
                 var todasSuscripciones = await _supabase.ObtenerSuscripcionesAsync();
                 _todasSuscripciones = todasSuscripciones.Where(s => s.Estado == "activa").ToList();
 
+                // Cargar plataformas para filtro
+                var plataformas = await _supabase.ObtenerPlataformasAsync();
+                _todasPlataformas = plataformas.Where(p => p.Estado == "activa").ToList();
+                CargarFiltros();
+
                 // Aplicar filtros
                 await AplicarFiltrosAsync();
 
@@ -59,6 +65,14 @@ namespace StreamManager.Views.Pages
             {
                 if (LoadingOverlay != null) LoadingOverlay.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private void CargarFiltros()
+        {
+            var plataformasParaFiltro = new List<Plataforma> { new Plataforma { Id = Guid.Empty, Nombre = "Todas las plataformas" } };
+            plataformasParaFiltro.AddRange(_todasPlataformas.OrderBy(p => p.Nombre));
+            PlataformaFiltroComboBox.ItemsSource = plataformasParaFiltro;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
         }
 
         private void ActualizarResumen()
@@ -85,7 +99,7 @@ namespace StreamManager.Views.Pages
                 if (ProximosTextBlock != null) ProximosTextBlock.Text = proximos.Count.ToString();
                 if (MontoProximosTextBlock != null) MontoProximosTextBlock.Text = $"L {proximos.Sum(s => s.Precio):N2}";
 
-                // Cobrado hoy (Esta parte sí estaba bien con Task.Run porque usa Dispatcher)
+                // Cobrado hoy
                 Task.Run(async () =>
                 {
                     try
@@ -108,7 +122,6 @@ namespace StreamManager.Views.Pages
             }
         }
 
-        // ✅ CORRECCIÓN: Quitamos Task.Run de los eventos para evitar el crash de hilos
         private async void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsLoaded)
@@ -125,15 +138,42 @@ namespace StreamManager.Views.Pages
             }
         }
 
+        private async void FechaFiltro_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                await AplicarFiltrosAsync();
+            }
+        }
+
+        private void LimpiarFiltrosButton_Click(object sender, RoutedEventArgs e)
+        {
+            BusquedaTextBox.Text = string.Empty;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
+            EstadoFiltroComboBox.SelectedIndex = 0;
+            FechaDesdeFilterPicker.SelectedDate = null;
+            FechaHastaFilterPicker.SelectedDate = null;
+
+            Task.Run(async () =>
+            {
+                await Dispatcher.InvokeAsync(async () =>
+                {
+                    await AplicarFiltrosAsync();
+                });
+            });
+        }
+
         private async Task AplicarFiltrosAsync()
         {
             try
             {
-                // Validación para evitar crash si los controles no están listos
                 if (EstadoFiltroComboBox == null || BusquedaTextBox == null) return;
 
                 var estadoFiltro = (EstadoFiltroComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "todos";
                 var textoBusqueda = BusquedaTextBox.Text?.ToLower() ?? "";
+                var plataformaSeleccionada = PlataformaFiltroComboBox.SelectedItem as Plataforma;
+                var fechaDesde = FechaDesdeFilterPicker.SelectedDate;
+                var fechaHasta = FechaHastaFilterPicker.SelectedDate;
 
                 var suscripcionesFiltradas = _todasSuscripciones.AsEnumerable();
                 var hoy = DateOnly.FromDateTime(DateTime.Today);
@@ -150,6 +190,19 @@ namespace StreamManager.Views.Pages
                     _ => suscripcionesFiltradas
                 };
 
+                // Filtrar por rango de fechas
+                if (fechaDesde.HasValue)
+                {
+                    var desde = DateOnly.FromDateTime(fechaDesde.Value);
+                    suscripcionesFiltradas = suscripcionesFiltradas.Where(s => s.FechaProximoPago >= desde);
+                }
+
+                if (fechaHasta.HasValue)
+                {
+                    var hasta = DateOnly.FromDateTime(fechaHasta.Value);
+                    suscripcionesFiltradas = suscripcionesFiltradas.Where(s => s.FechaProximoPago <= hasta);
+                }
+
                 // Obtener datos relacionados
                 var clientes = await _supabase.ObtenerClientesAsync();
                 var plataformas = await _supabase.ObtenerPlataformasAsync();
@@ -163,9 +216,23 @@ namespace StreamManager.Views.Pages
 
                     if (cliente == null || plataforma == null) continue;
 
+                    // Filtro de búsqueda por cliente
+                    if (!string.IsNullOrWhiteSpace(textoBusqueda))
+                    {
+                        if (!cliente.NombreCompleto.ToLower().Contains(textoBusqueda) &&
+                            !(cliente.Telefono?.Contains(textoBusqueda) ?? false))
+                            continue;
+                    }
+
+                    // Filtro por plataforma
+                    if (plataformaSeleccionada != null && plataformaSeleccionada.Id != Guid.Empty)
+                    {
+                        if (plataforma.Nombre != plataformaSeleccionada.Nombre)
+                            continue;
+                    }
+
                     var diasRestantes = (suscripcion.FechaProximoPago.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
 
-                    // ✅ CORRECCIÓN: Protección contra colores nulos o inválidos
                     Brush colorPlataforma;
                     try
                     {
@@ -179,107 +246,94 @@ namespace StreamManager.Views.Pages
                         colorPlataforma = Brushes.Gray;
                     }
 
-                    var vm = new SuscripcionCobroViewModel
-                    {
-                        Id = suscripcion.Id,
-                        ClienteNombre = cliente.NombreCompleto,
-                        ClienteTelefono = cliente.Telefono ?? "Sin teléfono",
-                        ClienteIniciales = ObtenerIniciales(cliente.NombreCompleto),
-                        PlataformaNombre = plataforma.Nombre,
-                        PlataformaColor = colorPlataforma,
-                        PrecioTexto = $"L {suscripcion.Precio:N2}",
-                        FechaProximoPagoTexto = $"Próximo pago: {suscripcion.FechaProximoPago:dd/MM/yyyy}",
-                        DiasRestantesTexto = ObtenerTextoDiasRestantes(diasRestantes),
-                        DiasRestantesColor = ObtenerColorDiasRestantes(diasRestantes),
-                        EstadoPagoTexto = ObtenerEstadoPago(diasRestantes),
-                        EstadoColor = ObtenerColorEstadoPago(diasRestantes),
-                        EstadoBackground = diasRestantes < 0 ?
-                            new SolidColorBrush(Color.FromRgb(255, 245, 245)) :
-                            Brushes.White
-                    };
+                    var iniciales = string.Join("", cliente.NombreCompleto.Split(' ')
+                        .Where(p => !string.IsNullOrWhiteSpace(p))
+                        .Take(2)
+                        .Select(p => p[0].ToString().ToUpper()));
 
-                    // Filtrar por búsqueda
-                    if (!string.IsNullOrWhiteSpace(textoBusqueda))
+                    string estadoPagoTexto;
+                    Brush estadoColor;
+                    Brush estadoBackground;
+
+                    if (diasRestantes < 0)
                     {
-                        var textoCompleto = $"{vm.ClienteNombre} {vm.ClienteTelefono} {vm.PlataformaNombre}".ToLower();
-                        if (!textoCompleto.Contains(textoBusqueda))
-                            continue;
+                        estadoPagoTexto = "VENCIDO";
+                        estadoColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F44336"));
+                        estadoBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFEBEE"));
                     }
-
-                    suscripcionesViewModel.Add(vm);
-                }
-
-                if (SuscripcionesItemsControl != null)
-                {
-                    if (suscripcionesViewModel.Any())
+                    else if (diasRestantes == 0)
                     {
-                        SuscripcionesItemsControl.ItemsSource = suscripcionesViewModel;
-                        if (EmptyStatePanel != null) EmptyStatePanel.Visibility = Visibility.Collapsed;
+                        estadoPagoTexto = "VENCE HOY";
+                        estadoColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF9800"));
+                        estadoBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFF3E0"));
+                    }
+                    else if (diasRestantes <= 3)
+                    {
+                        estadoPagoTexto = "PRÓXIMO";
+                        estadoColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFC107"));
+                        estadoBackground = Brushes.White;
                     }
                     else
                     {
-                        SuscripcionesItemsControl.ItemsSource = null;
-                        if (EmptyStatePanel != null) EmptyStatePanel.Visibility = Visibility.Visible;
+                        estadoPagoTexto = "ACTIVA";
+                        estadoColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
+                        estadoBackground = Brushes.White;
                     }
+
+                    var diasRestantesColor = diasRestantes < 0 ? estadoColor :
+                                            diasRestantes == 0 ? estadoColor :
+                                            diasRestantes <= 3 ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFC107")) :
+                                            Brushes.Gray;
+
+                    var diasTexto = diasRestantes < 0 ? $"{Math.Abs(diasRestantes)} días vencido" :
+                                   diasRestantes == 0 ? "Vence hoy" :
+                                   diasRestantes == 1 ? "1 día" :
+                                   $"{diasRestantes} días";
+
+                    suscripcionesViewModel.Add(new SuscripcionCobroViewModel
+                    {
+                        Id = suscripcion.Id,
+                        ClienteNombre = cliente.NombreCompleto,
+                        ClienteTelefono = cliente.Telefono ?? "",
+                        ClienteIniciales = iniciales,
+                        PlataformaNombre = plataforma.Nombre,
+                        PlataformaColor = colorPlataforma,
+                        PrecioTexto = $"L {suscripcion.Precio:N2}",
+                        FechaProximoPagoTexto = $"📅 {suscripcion.FechaProximoPago:dd/MM/yyyy}",
+                        DiasRestantesTexto = diasTexto,
+                        DiasRestantesColor = diasRestantesColor,
+                        EstadoPagoTexto = estadoPagoTexto,
+                        EstadoColor = estadoColor,
+                        EstadoBackground = estadoBackground
+                    });
                 }
+
+                if (SuscripcionesItemsControl != null)
+                    SuscripcionesItemsControl.ItemsSource = suscripcionesViewModel;
+
+                if (EmptyStatePanel != null)
+                    EmptyStatePanel.Visibility = suscripcionesViewModel.Any() ? Visibility.Collapsed : Visibility.Visible;
+
+                ActualizarContadorResultados(suscripcionesViewModel.Count);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error filtros: {ex.Message}");
+                MessageBox.Show(
+                    $"Error al aplicar filtros: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 
-        private string ObtenerIniciales(string nombreCompleto)
+        private void ActualizarContadorResultados(int cantidad)
         {
-            if (string.IsNullOrEmpty(nombreCompleto)) return "??";
-            var palabras = nombreCompleto.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (palabras.Length >= 2)
-                return $"{palabras[0][0]}{palabras[1][0]}".ToUpper();
-            if (palabras.Length == 1 && palabras[0].Length >= 2)
-                return palabras[0].Substring(0, 2).ToUpper();
-            return "CL";
-        }
-
-        private string ObtenerTextoDiasRestantes(int dias)
-        {
-            if (dias < 0)
-                return $"⚠️ Vencido hace {Math.Abs(dias)} día(s)";
-            if (dias == 0)
-                return "🔔 Vence HOY";
-            if (dias == 1)
-                return "⏰ Vence MAÑANA";
-
-            return $"📅 Vence en {dias} días";
-        }
-
-        private Brush ObtenerColorDiasRestantes(int dias)
-        {
-            if (dias < 0) return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
-            if (dias == 0) return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
-            if (dias == 1) return new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Naranja
-            if (dias <= 7) return new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Amarillo
-
-            return new SolidColorBrush(Color.FromRgb(76, 175, 80)); // Verde
-        }
-
-        private string ObtenerEstadoPago(int dias)
-        {
-            if (dias < 0) return "VENCIDO";
-            if (dias == 0) return "VENCE HOY";
-            if (dias <= 3) return "URGENTE";
-            if (dias <= 7) return "PRÓXIMO";
-
-            return "AL DÍA";
-        }
-
-        private Brush ObtenerColorEstadoPago(int dias)
-        {
-            if (dias < 0) return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
-            if (dias == 0) return new SolidColorBrush(Color.FromRgb(244, 67, 54)); // Rojo
-            if (dias <= 3) return new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Naranja
-            if (dias <= 7) return new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Amarillo
-
-            return new SolidColorBrush(Color.FromRgb(76, 175, 80)); // Verde
+            if (ResultadosTextBlock != null)
+            {
+                ResultadosTextBlock.Text = cantidad == 1
+                    ? "1 resultado"
+                    : $"{cantidad} resultados";
+            }
         }
 
         private async void RegistrarPagoButton_Click(object sender, RoutedEventArgs e)
@@ -290,72 +344,77 @@ namespace StreamManager.Views.Pages
                 if (suscripcion == null) return;
 
                 var clientes = await _supabase.ObtenerClientesAsync();
-                var plataformas = await _supabase.ObtenerPlataformasAsync();
-
                 var cliente = clientes.FirstOrDefault(c => c.Id == suscripcion.ClienteId);
-                var plataforma = plataformas.FirstOrDefault(p => p.Id == suscripcion.PlataformaId);
 
-                // Dialog simple para capturar método de pago
                 var dialog = new Window
                 {
                     Title = "Registrar Pago",
-                    Width = 430,
+                    Width = 450,
                     Height = 400,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Window.GetWindow(this),
                     ResizeMode = ResizeMode.NoResize
                 };
 
                 var stack = new StackPanel { Margin = new Thickness(20) };
 
-                stack.Children.Add(new TextBlock
+                var tituloText = new TextBlock
                 {
-                    Text = "REGISTRAR PAGO DE CLIENTE",
-                    FontSize = 18,
+                    Text = "REGISTRAR PAGO",
+                    FontSize = 20,
                     FontWeight = FontWeights.Bold,
                     Margin = new Thickness(0, 0, 0, 20)
-                });
+                };
+                stack.Children.Add(tituloText);
 
-                stack.Children.Add(new TextBlock
+                var clienteText = new TextBlock
                 {
                     Text = $"Cliente: {cliente?.NombreCompleto ?? "N/A"}",
                     FontSize = 14,
                     Margin = new Thickness(0, 0, 0, 8)
-                });
+                };
+                stack.Children.Add(clienteText);
 
-                stack.Children.Add(new TextBlock
-                {
-                    Text = $"Plataforma: {plataforma?.Nombre ?? "N/A"}",
-                    FontSize = 14,
-                    Margin = new Thickness(0, 0, 0, 8)
-                });
-
-                stack.Children.Add(new TextBlock
+                var montoText = new TextBlock
                 {
                     Text = $"Monto: L {suscripcion.Precio:N2}",
-                    FontSize = 18,
+                    FontSize = 14,
                     FontWeight = FontWeights.Bold,
-                    Foreground = new SolidColorBrush(Color.FromRgb(76, 175, 80)),
                     Margin = new Thickness(0, 0, 0, 20)
-                });
+                };
+                stack.Children.Add(montoText);
+
+                var metodoLabel = new TextBlock
+                {
+                    Text = "Método de Pago:",
+                    FontSize = 14,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+                stack.Children.Add(metodoLabel);
 
                 var metodoCombo = new ComboBox
                 {
-                    Margin = new Thickness(0, 0, 0, 10),
+                    Margin = new Thickness(0, 0, 0, 16),
                     SelectedIndex = 0
                 };
-                metodoCombo.Items.Add(new ComboBoxItem { Content = "Efectivo", Tag = "efectivo" });
+                metodoCombo.Items.Add(new ComboBoxItem { Content = "Efectivo", Tag = "efectivo", IsSelected = true });
                 metodoCombo.Items.Add(new ComboBoxItem { Content = "Transferencia", Tag = "transferencia" });
                 metodoCombo.Items.Add(new ComboBoxItem { Content = "Depósito", Tag = "deposito" });
                 metodoCombo.Items.Add(new ComboBoxItem { Content = "Otro", Tag = "otro" });
-
-                stack.Children.Add(new TextBlock { Text = "Método de Pago:", FontWeight = FontWeights.SemiBold });
                 stack.Children.Add(metodoCombo);
+
+                var referenciaLabel = new TextBlock
+                {
+                    Text = "Referencia (opcional):",
+                    FontSize = 14,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+                stack.Children.Add(referenciaLabel);
 
                 var referenciaText = new TextBox
                 {
-                    Margin = new Thickness(0, 10, 0, 10)
+                    Margin = new Thickness(0, 0, 0, 20)
                 };
-                stack.Children.Add(new TextBlock { Text = "Referencia (opcional):", FontWeight = FontWeights.SemiBold });
                 stack.Children.Add(referenciaText);
 
                 var buttonStack = new StackPanel

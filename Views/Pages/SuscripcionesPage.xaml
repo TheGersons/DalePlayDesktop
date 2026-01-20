@@ -8,6 +8,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -46,40 +47,145 @@
                 </StackPanel>
             </Button>
 
-            <!-- Filtros -->
-            <ComboBox x:Name="EstadoFiltroComboBox"
-                     materialDesign:HintAssist.Hint="Filtrar por estado"
-                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                     MinWidth="150"
-                     SelectionChanged="FiltroComboBox_SelectionChanged">
-                <ComboBoxItem Content="Todos" Tag="" IsSelected="True"/>
-                <ComboBoxItem Content="Activas" Tag="activa"/>
-                <ComboBoxItem Content="Vencidas" Tag="vencida"/>
-                <ComboBoxItem Content="Canceladas" Tag="cancelada"/>
-            </ComboBox>
+            <Button x:Name="LimpiarFiltrosButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="LimpiarFiltrosButton_Click"
+                    Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FilterRemove" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="LIMPIAR FILTROS" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
         </StackPanel>
 
-        <!-- DataGrid de suscripciones -->
+        <!-- Panel de Filtros Avanzados -->
         <materialDesign:Card Grid.Row="2"
+                             Padding="16"
+                             Margin="0,0,0,16"
+                             materialDesign:ElevationAssist.Elevation="Dp1">
+            <Expander x:Name="FiltrosExpander"
+                     Header="Filtros Avanzados"
+                     IsExpanded="True">
+                <Grid Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Primera fila de filtros -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Búsqueda general -->
+                        <TextBox x:Name="BuscarTextBox"
+                                Grid.Column="0"
+                                materialDesign:HintAssist.Hint="🔍 Buscar (cliente, perfil, plataforma)"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Margin="0,0,8,0"
+                                TextChanged="BuscarTextBox_TextChanged"/>
+
+                        <!-- Filtro por Cliente -->
+                        <ComboBox x:Name="ClienteFiltroComboBox"
+                                 Grid.Column="1"
+                                 materialDesign:HintAssist.Hint="👤 Filtrar por cliente"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 DisplayMemberPath="NombreCompleto"
+                                 Margin="0,0,8,0"
+                                 SelectionChanged="FiltroComboBox_SelectionChanged"/>
+
+                        <!-- Filtro por Plataforma -->
+                        <ComboBox x:Name="PlataformaFiltroComboBox"
+                                 Grid.Column="2"
+                                 materialDesign:HintAssist.Hint="📺 Filtrar por plataforma"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 DisplayMemberPath="Nombre"
+                                 Margin="0,0,8,0"
+                                 SelectionChanged="FiltroComboBox_SelectionChanged"/>
+
+                        <!-- Filtro por Estado -->
+                        <ComboBox x:Name="EstadoFiltroComboBox"
+                                 Grid.Column="3"
+                                 materialDesign:HintAssist.Hint="📊 Filtrar por estado"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 SelectionChanged="FiltroComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Todos los estados" Tag="" IsSelected="True"/>
+                            <ComboBoxItem Content="✅ Activas" Tag="activa"/>
+                            <ComboBoxItem Content="⏰ Vencidas" Tag="vencida"/>
+                            <ComboBoxItem Content="❌ Canceladas" Tag="cancelada"/>
+                        </ComboBox>
+                    </Grid>
+
+                    <!-- Segunda fila de filtros -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Filtro por Teléfono -->
+                        <TextBox x:Name="TelefonoFiltroTextBox"
+                                Grid.Column="0"
+                                materialDesign:HintAssist.Hint="📱 Buscar por teléfono"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Margin="0,0,8,0"
+                                TextChanged="BuscarTextBox_TextChanged"/>
+
+                        <!-- Filtro fecha DESDE -->
+                        <DatePicker x:Name="FechaDesdeFilterPicker"
+                                   Grid.Column="1"
+                                   materialDesign:HintAssist.Hint="📅 Próximo pago desde"
+                                   Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                   Margin="0,0,8,0"
+                                   SelectedDateChanged="FechaFiltro_SelectedDateChanged"/>
+
+                        <!-- Filtro fecha HASTA -->
+                        <DatePicker x:Name="FechaHastaFilterPicker"
+                                   Grid.Column="2"
+                                   materialDesign:HintAssist.Hint="📅 Próximo pago hasta"
+                                   Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                   Margin="0,0,8,0"
+                                   SelectedDateChanged="FechaFiltro_SelectedDateChanged"/>
+
+                        <!-- Contador de resultados -->
+                        <Border Grid.Column="3"
+                               Background="#E3F2FD"
+                               CornerRadius="4"
+                               Padding="12,8">
+                            <StackPanel Orientation="Horizontal" 
+                                       HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="FilterCheck" 
+                                                        VerticalAlignment="Center"
+                                                        Foreground="#1976D2"/>
+                                <TextBlock x:Name="ResultadosTextBlock"
+                                          Text="0 resultados"
+                                          VerticalAlignment="Center"
+                                          Margin="8,0,0,0"
+                                          FontWeight="SemiBold"
+                                          Foreground="#1976D2"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Expander>
+        </materialDesign:Card>
+
+        <!-- DataGrid de suscripciones -->
+        <materialDesign:Card Grid.Row="3"
                              Padding="16"
                              materialDesign:ElevationAssist.Elevation="Dp2">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Buscador -->
-                <TextBox x:Name="BuscarTextBox"
-                         Grid.Row="0"
-                         materialDesign:HintAssist.Hint="Buscar por cliente..."
-                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         Margin="0,0,0,16"
-                         TextChanged="BuscarTextBox_TextChanged"/>
-
                 <!-- DataGrid -->
                 <DataGrid x:Name="SuscripcionesDataGrid"
-                          Grid.Row="1"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           CanUserDeleteRows="False"
@@ -93,20 +199,30 @@
                                           Binding="{Binding ClienteNombre}"
                                           Width="*"/>
 
+                        <!-- Teléfono -->
+                        <DataGridTextColumn Header="Teléfono" 
+                                          Binding="{Binding ClienteTelefono}"
+                                          Width="110"/>
+
+                        <!-- Plataforma -->
+                        <DataGridTextColumn Header="Plataforma" 
+                                          Binding="{Binding PlataformaNombre}"
+                                          Width="120"/>
+
                         <!-- Perfil -->
                         <DataGridTextColumn Header="Perfil" 
                                           Binding="{Binding PerfilNombre}"
-                                          Width="150"/>
+                                          Width="130"/>
 
                         <!-- Costo -->
                         <DataGridTextColumn Header="Costo Mensual" 
                                           Binding="{Binding CostoMensual, StringFormat=L {0:N2}}"
-                                          Width="130"/>
+                                          Width="120"/>
 
                         <!-- Fecha Inicio -->
                         <DataGridTextColumn Header="Inicio" 
                                           Binding="{Binding FechaInicio, StringFormat=dd/MM/yyyy}"
-                                          Width="110"/>
+                                          Width="100"/>
 
                         <!-- Próximo Pago -->
                         <DataGridTextColumn Header="Próximo Pago" 
@@ -170,7 +286,6 @@
 
                 <!-- Loading overlay -->
                 <Grid x:Name="LoadingOverlay"
-                      Grid.Row="1"
                       Background="#80000000"
                       Visibility="Collapsed">
                     <StackPanel VerticalAlignment="Center" 

@@ -14,6 +14,7 @@ namespace StreamManager.Views.Pages
         private readonly SupabaseService _supabase;
         private ObservableCollection<PerfilViewModel> _perfiles;
         private List<PerfilViewModel> _todosPerfiles;
+        private List<Plataforma> _todasPlataformas;
 
         public PerfilesPage()
         {
@@ -24,6 +25,7 @@ namespace StreamManager.Views.Pages
 
             _perfiles = new ObservableCollection<PerfilViewModel>();
             _todosPerfiles = new List<PerfilViewModel>();
+            _todasPlataformas = new List<Plataforma>();
 
             PerfilesDataGrid.ItemsSource = _perfiles;
 
@@ -45,6 +47,9 @@ namespace StreamManager.Views.Pages
                 var perfiles = await _supabase.ObtenerPerfilesAsync();
                 var cuentas = await _supabase.ObtenerCuentasAsync();
                 var plataformas = await _supabase.ObtenerPlataformasAsync();
+
+                _todasPlataformas = plataformas.Where(p => p.Estado == "activa").ToList();
+                CargarFiltros();
 
                 // Crear ViewModels
                 _todosPerfiles = perfiles.Select(p =>
@@ -81,24 +86,41 @@ namespace StreamManager.Views.Pages
             }
         }
 
+        private void CargarFiltros()
+        {
+            var plataformasParaFiltro = new List<Plataforma> { new Plataforma { Id = Guid.Empty, Nombre = "Todas las plataformas" } };
+            plataformasParaFiltro.AddRange(_todasPlataformas.OrderBy(p => p.Nombre));
+            PlataformaFiltroComboBox.ItemsSource = plataformasParaFiltro;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
+        }
+
         private void AplicarFiltros()
         {
-            var busqueda = BuscarTextBox.Text.ToLower();
+            var busquedaNombre = BuscarTextBox.Text.ToLower().Trim();
+            var busquedaCuenta = CuentaFiltroTextBox.Text.ToLower().Trim();
             var estadoFiltro = (EstadoFiltroComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+            var plataformaSeleccionada = PlataformaFiltroComboBox.SelectedItem as Plataforma;
 
             var filtrados = _todosPerfiles.Where(p =>
             {
-                // Filtro de búsqueda
-                var coincideBusqueda = string.IsNullOrWhiteSpace(busqueda) ||
-                    p.Nombre.ToLower().Contains(busqueda) ||
-                    p.PlataformaNombre.ToLower().Contains(busqueda) ||
-                    p.CuentaNombre.ToLower().Contains(busqueda);
+                // Filtro de búsqueda por nombre
+                var coincideNombre = string.IsNullOrWhiteSpace(busquedaNombre) ||
+                    p.Nombre.ToLower().Contains(busquedaNombre);
+
+                // Filtro de búsqueda por cuenta
+                var coincideCuenta = string.IsNullOrWhiteSpace(busquedaCuenta) ||
+                    p.CuentaNombre.ToLower().Contains(busquedaCuenta);
 
                 // Filtro de estado
                 var coincideEstado = string.IsNullOrWhiteSpace(estadoFiltro) ||
                     p.Estado.ToLower() == estadoFiltro;
 
-                return coincideBusqueda && coincideEstado;
+                // Filtro de plataforma
+                var coincidePlataforma = plataformaSeleccionada == null ||
+                    plataformaSeleccionada.Id == Guid.Empty ||
+                    p.PlataformaNombre == plataformaSeleccionada.Nombre;
+
+                return coincideNombre && coincideCuenta && coincideEstado && coincidePlataforma;
             }).ToList();
 
             _perfiles.Clear();
@@ -106,6 +128,25 @@ namespace StreamManager.Views.Pages
             {
                 _perfiles.Add(perfil);
             }
+
+            ActualizarContadorResultados(filtrados.Count);
+        }
+
+        private void ActualizarContadorResultados(int cantidad)
+        {
+            ResultadosTextBlock.Text = cantidad == 1
+                ? "1 resultado"
+                : $"{cantidad} resultados";
+        }
+
+        private void LimpiarFiltrosButton_Click(object sender, RoutedEventArgs e)
+        {
+            BuscarTextBox.Text = string.Empty;
+            CuentaFiltroTextBox.Text = string.Empty;
+            EstadoFiltroComboBox.SelectedIndex = 0;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
+
+            AplicarFiltros();
         }
 
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
@@ -276,7 +317,10 @@ namespace StreamManager.Views.Pages
 
         private void BuscarTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AplicarFiltros();
+            if (IsLoaded)
+            {
+                AplicarFiltros();
+            }
         }
 
         private void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

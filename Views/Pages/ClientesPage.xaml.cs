@@ -43,11 +43,7 @@ namespace StreamManager.Views.Pages
                 var clientes = await _supabase.ObtenerClientesAsync();
                 _todosClientes = clientes.OrderBy(c => c.NombreCompleto).ToList();
 
-                _clientes.Clear();
-                foreach (var cliente in _todosClientes)
-                {
-                    _clientes.Add(cliente);
-                }
+                AplicarFiltros();
             }
             catch (Exception ex)
             {
@@ -61,6 +57,72 @@ namespace StreamManager.Views.Pages
             {
                 LoadingOverlay.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private void AplicarFiltros()
+        {
+            var busquedaNombre = BuscarTextBox.Text.ToLower().Trim();
+            var busquedaTelefono = TelefonoFiltroTextBox.Text.Trim();
+            var estadoFiltro = (EstadoFiltroComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+            var fechaDesde = FechaDesdeFilterPicker.SelectedDate;
+            var fechaHasta = FechaHastaFilterPicker.SelectedDate;
+
+            var filtrados = _todosClientes.Where(c =>
+            {
+                // Filtro de búsqueda por nombre
+                var coincideNombre = string.IsNullOrWhiteSpace(busquedaNombre) ||
+                    c.NombreCompleto.ToLower().Contains(busquedaNombre);
+
+                // Filtro de búsqueda por teléfono
+                var coincideTelefono = string.IsNullOrWhiteSpace(busquedaTelefono) ||
+                    (c.Telefono?.Contains(busquedaTelefono) ?? false);
+
+                // Filtro de estado
+                var coincideEstado = string.IsNullOrWhiteSpace(estadoFiltro) ||
+                    c.Estado.ToLower() == estadoFiltro;
+
+                // Filtro de fecha DESDE
+                var coincideFechaDesde = !fechaDesde.HasValue ||
+                    c.FechaRegistro >= fechaDesde.Value;
+
+                // Filtro de fecha HASTA
+                var coincideFechaHasta = !fechaHasta.HasValue ||
+                    c.FechaRegistro <= fechaHasta.Value;
+
+                return coincideNombre &&
+                       coincideTelefono &&
+                       coincideEstado &&
+                       coincideFechaDesde &&
+                       coincideFechaHasta;
+            }).ToList();
+
+            _clientes.Clear();
+            foreach (var cliente in filtrados)
+            {
+                _clientes.Add(cliente);
+            }
+
+            // Actualizar contador de resultados
+            ActualizarContadorResultados(filtrados.Count);
+        }
+
+        private void ActualizarContadorResultados(int cantidad)
+        {
+            ResultadosTextBlock.Text = cantidad == 1
+                ? "1 resultado"
+                : $"{cantidad} resultados";
+        }
+
+        private void LimpiarFiltrosButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Limpiar todos los filtros
+            BuscarTextBox.Text = string.Empty;
+            TelefonoFiltroTextBox.Text = string.Empty;
+            EstadoFiltroComboBox.SelectedIndex = 0;
+            FechaDesdeFilterPicker.SelectedDate = null;
+            FechaHastaFilterPicker.SelectedDate = null;
+
+            AplicarFiltros();
         }
 
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
@@ -213,18 +275,25 @@ namespace StreamManager.Views.Pages
 
         private void BuscarTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var busqueda = BuscarTextBox.Text.ToLower();
-
-            var filtrados = string.IsNullOrWhiteSpace(busqueda)
-                ? _todosClientes
-                : _todosClientes.Where(c =>
-                    c.NombreCompleto.ToLower().Contains(busqueda) ||
-                    (c.Telefono?.Contains(busqueda) ?? false)).ToList();
-
-            _clientes.Clear();
-            foreach (var cliente in filtrados)
+            if (IsLoaded)
             {
-                _clientes.Add(cliente);
+                AplicarFiltros();
+            }
+        }
+
+        private void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                AplicarFiltros();
+            }
+        }
+
+        private void FechaFiltro_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                AplicarFiltros();
             }
         }
     }

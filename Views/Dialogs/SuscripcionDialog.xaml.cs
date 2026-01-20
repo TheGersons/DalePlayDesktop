@@ -105,11 +105,22 @@ namespace StreamManager.Views.Dialogs
                         PlataformaComboBox.SelectedItem = plataforma;
                         // Esto disparará el evento que cargará las cuentas
 
-                        // Esperar a que se carguen las cuentas
+                        // Esperar a que se carguen las cuentas y luego seleccionar
                         Dispatcher.InvokeAsync(async () =>
                         {
                             await Task.Delay(100);
-                            CuentaComboBox.SelectedItem = cuenta;
+
+                            // FIX: Buscar el objeto anónimo que contiene la cuenta
+                            if (CuentaComboBox.ItemsSource != null)
+                            {
+                                var cuentaItem = ((IEnumerable<dynamic>)CuentaComboBox.ItemsSource)
+                                    .FirstOrDefault(item => item.Cuenta.Id == cuenta.Id);
+
+                                if (cuentaItem != null)
+                                {
+                                    CuentaComboBox.SelectedItem = cuentaItem;
+                                }
+                            }
 
                             await Task.Delay(100);
                             PerfilComboBox.SelectedItem = perfil;
@@ -151,9 +162,12 @@ namespace StreamManager.Views.Dialogs
                 CuentaComboBox.DisplayMemberPath = "Texto";
                 CuentaComboBox.IsEnabled = cuentasPlataforma.Any();
 
-                // Limpiar perfiles al cambiar plataforma
-                PerfilComboBox.ItemsSource = null;
-                PerfilComboBox.IsEnabled = false;
+                // Limpiar perfiles al cambiar plataforma (solo si no estamos en modo edición inicial)
+                if (!_esEdicion || CuentaComboBox.SelectedItem != null)
+                {
+                    PerfilComboBox.ItemsSource = null;
+                    PerfilComboBox.IsEnabled = false;
+                }
             }
         }
 
@@ -167,20 +181,23 @@ namespace StreamManager.Views.Dialogs
 
                 if (cuenta != null)
                 {
-                    // BUSCAMOS PERFILES: Importante que el estado en la DB sea 'disponible'
+                    // BUSCAMOS PERFILES: 
+                    // - Perfiles con estado 'disponible'
+                    // - En modo edición, también incluir el perfil actual aunque esté 'ocupado'
                     var perfilesDisponibles = _perfiles
                         .Where(p => p.CuentaId == cuenta.Id &&
-                               p.Estado.Trim().ToLower() == "disponible")
+                               (p.Estado.Trim().ToLower() == "disponible" ||
+                                (_esEdicion && p.Id == Suscripcion.PerfilId)))
                         .ToList();
 
                     PerfilComboBox.ItemsSource = perfilesDisponibles;
-                    PerfilComboBox.DisplayMemberPath = "NombrePerfil"; // Asegúrate que esta propiedad existe
+                    PerfilComboBox.DisplayMemberPath = "NombrePerfil";
                     PerfilComboBox.IsEnabled = perfilesDisponibles.Any();
 
                     if (!perfilesDisponibles.Any())
                     {
                         // Mensaje de ayuda para el usuario
-                        Console.WriteLine("No se encontraron perfiles con estado 'disponible' para esta cuenta.");
+                        Console.WriteLine("No se encontraron perfiles disponibles para esta cuenta.");
                     }
                 }
             }

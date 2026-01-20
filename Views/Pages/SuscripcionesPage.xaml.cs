@@ -6,9 +6,8 @@ using StreamManager.Views.Dialogs;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Threading.Tasks;    // Para CargarSuscripcionesAsync
-using System.Linq;               // Para .Select(), .FirstOrDefault(), .Where()
-
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace StreamManager.Views.Pages
 {
@@ -17,6 +16,8 @@ namespace StreamManager.Views.Pages
         private readonly SupabaseService _supabase;
         private ObservableCollection<SuscripcionViewModel> _suscripciones;
         private List<SuscripcionViewModel> _todasSuscripciones;
+        private List<Cliente> _todosClientes;
+        private List<Plataforma> _todasPlataformas;
 
         public SuscripcionesPage()
         {
@@ -27,6 +28,8 @@ namespace StreamManager.Views.Pages
 
             _suscripciones = new ObservableCollection<SuscripcionViewModel>();
             _todasSuscripciones = new List<SuscripcionViewModel>();
+            _todosClientes = new List<Cliente>();
+            _todasPlataformas = new List<Plataforma>();
 
             SuscripcionesDataGrid.ItemsSource = _suscripciones;
 
@@ -51,6 +54,13 @@ namespace StreamManager.Views.Pages
                 var cuentas = await _supabase.ObtenerCuentasAsync();
                 var plataformas = await _supabase.ObtenerPlataformasAsync();
 
+                // Guardar referencias para los filtros
+                _todosClientes = clientes.Where(c => c.Estado == "activo").ToList();
+                _todasPlataformas = plataformas.Where(p => p.Estado == "activa").ToList();
+
+                // Cargar ComboBoxes de filtros
+                CargarFiltros();
+
                 // Crear ViewModels con información relacionada
                 _todasSuscripciones = suscripciones.Select(s =>
                 {
@@ -64,23 +74,19 @@ namespace StreamManager.Views.Pages
                         Id = s.Id,
                         ClienteId = s.ClienteId,
                         ClienteNombre = cliente?.NombreCompleto ?? "Cliente desconocido",
-
-                        // CORRECCIÓN 1: Casteo de Guid? a Guid (quitando la coma doble)
+                        ClienteTelefono = cliente?.Telefono ?? "",
                         PerfilId = s.PerfilId ?? Guid.Empty,
-
                         PerfilNombre = perfil?.NombrePerfil ?? "Perfil desconocido",
                         PlataformaNombre = plataforma?.Nombre ?? "Plataforma desconocida",
                         CostoMensual = s.Precio,
-
-                        // CORRECCIÓN 2: Conversión de DateOnly a DateTime
                         FechaInicio = s.FechaInicio.ToDateTime(TimeOnly.MinValue),
                         ProximoPago = s.FechaProximoPago.ToDateTime(TimeOnly.MinValue),
-
                         Estado = s.Estado,
                         Notas = s.Notas,
                         Suscripcion = s
                     };
                 }).OrderByDescending(s => s.FechaInicio).ToList();
+
                 AplicarFiltros();
             }
             catch (Exception ex)
@@ -97,24 +103,74 @@ namespace StreamManager.Views.Pages
             }
         }
 
+        private void CargarFiltros()
+        {
+            // Cargar ComboBox de Clientes
+            var clientesParaFiltro = new List<Cliente> { new Cliente { Id = Guid.Empty, NombreCompleto = "Todos los clientes" } };
+            clientesParaFiltro.AddRange(_todosClientes.OrderBy(c => c.NombreCompleto));
+            ClienteFiltroComboBox.ItemsSource = clientesParaFiltro;
+            ClienteFiltroComboBox.SelectedIndex = 0;
+
+            // Cargar ComboBox de Plataformas
+            var plataformasParaFiltro = new List<Plataforma> { new Plataforma { Id = Guid.Empty, Nombre = "Todas las plataformas" } };
+            plataformasParaFiltro.AddRange(_todasPlataformas.OrderBy(p => p.Nombre));
+            PlataformaFiltroComboBox.ItemsSource = plataformasParaFiltro;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
+        }
+
         private void AplicarFiltros()
         {
-            var busqueda = BuscarTextBox.Text.ToLower();
+            var busqueda = BuscarTextBox.Text.ToLower().Trim();
+            var telefonoBusqueda = TelefonoFiltroTextBox.Text.Trim();
             var estadoFiltro = (EstadoFiltroComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+
+            var clienteSeleccionado = ClienteFiltroComboBox.SelectedItem as Cliente;
+            var plataformaSeleccionada = PlataformaFiltroComboBox.SelectedItem as Plataforma;
+
+            var fechaDesde = FechaDesdeFilterPicker.SelectedDate;
+            var fechaHasta = FechaHastaFilterPicker.SelectedDate;
 
             var filtradas = _todasSuscripciones.Where(s =>
             {
-                // Filtro de búsqueda
+                // Filtro de búsqueda general
                 var coincideBusqueda = string.IsNullOrWhiteSpace(busqueda) ||
                     s.ClienteNombre.ToLower().Contains(busqueda) ||
                     s.PerfilNombre.ToLower().Contains(busqueda) ||
                     s.PlataformaNombre.ToLower().Contains(busqueda);
 
+                // Filtro de teléfono
+                var coincideTelefono = string.IsNullOrWhiteSpace(telefonoBusqueda) ||
+                    s.ClienteTelefono.Contains(telefonoBusqueda);
+
                 // Filtro de estado
                 var coincideEstado = string.IsNullOrWhiteSpace(estadoFiltro) ||
                     s.Estado.ToLower() == estadoFiltro;
 
-                return coincideBusqueda && coincideEstado;
+                // Filtro de cliente específico
+                var coincideCliente = clienteSeleccionado == null ||
+                    clienteSeleccionado.Id == Guid.Empty ||
+                    s.ClienteId == clienteSeleccionado.Id;
+
+                // Filtro de plataforma específica
+                var coincidePlataforma = plataformaSeleccionada == null ||
+                    plataformaSeleccionada.Id == Guid.Empty ||
+                    s.PlataformaNombre == plataformaSeleccionada.Nombre;
+
+                // Filtro de fecha DESDE
+                var coincideFechaDesde = !fechaDesde.HasValue ||
+                    s.ProximoPago >= fechaDesde.Value;
+
+                // Filtro de fecha HASTA
+                var coincideFechaHasta = !fechaHasta.HasValue ||
+                    s.ProximoPago <= fechaHasta.Value;
+
+                return coincideBusqueda &&
+                       coincideTelefono &&
+                       coincideEstado &&
+                       coincideCliente &&
+                       coincidePlataforma &&
+                       coincideFechaDesde &&
+                       coincideFechaHasta;
             }).ToList();
 
             _suscripciones.Clear();
@@ -122,6 +178,30 @@ namespace StreamManager.Views.Pages
             {
                 _suscripciones.Add(suscripcion);
             }
+
+            // Actualizar contador de resultados
+            ActualizarContadorResultados(filtradas.Count);
+        }
+
+        private void ActualizarContadorResultados(int cantidad)
+        {
+            ResultadosTextBlock.Text = cantidad == 1
+                ? "1 resultado"
+                : $"{cantidad} resultados";
+        }
+
+        private void LimpiarFiltrosButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Limpiar todos los filtros
+            BuscarTextBox.Text = string.Empty;
+            TelefonoFiltroTextBox.Text = string.Empty;
+            EstadoFiltroComboBox.SelectedIndex = 0;
+            ClienteFiltroComboBox.SelectedIndex = 0;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
+            FechaDesdeFilterPicker.SelectedDate = null;
+            FechaHastaFilterPicker.SelectedDate = null;
+
+            AplicarFiltros();
         }
 
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
@@ -329,6 +409,14 @@ namespace StreamManager.Views.Pages
         }
 
         private void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                AplicarFiltros();
+            }
+        }
+
+        private void FechaFiltro_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsLoaded)
             {

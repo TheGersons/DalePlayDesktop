@@ -8,6 +8,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -46,39 +47,102 @@
                 </StackPanel>
             </Button>
 
-            <!-- Filtros -->
-            <ComboBox x:Name="EstadoFiltroComboBox"
-                     materialDesign:HintAssist.Hint="Filtrar por estado"
-                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                     MinWidth="150"
-                     SelectionChanged="FiltroComboBox_SelectionChanged">
-                <ComboBoxItem Content="Todos" Tag="" IsSelected="True"/>
-                <ComboBoxItem Content="Disponibles" Tag="disponible"/>
-                <ComboBoxItem Content="Ocupados" Tag="ocupado"/>
-            </ComboBox>
+            <Button x:Name="LimpiarFiltrosButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="LimpiarFiltrosButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FilterRemove" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="LIMPIAR FILTROS" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
         </StackPanel>
 
-        <!-- DataGrid de perfiles -->
+        <!-- Panel de Filtros Avanzados -->
         <materialDesign:Card Grid.Row="2"
+                             Padding="16"
+                             Margin="0,0,0,16"
+                             materialDesign:ElevationAssist.Elevation="Dp1">
+            <Expander x:Name="FiltrosExpander"
+                     Header="Filtros Avanzados"
+                     IsExpanded="True">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Búsqueda por nombre -->
+                    <TextBox x:Name="BuscarTextBox"
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="🔍 Buscar por nombre"
+                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Margin="0,0,8,0"
+                            TextChanged="BuscarTextBox_TextChanged"/>
+
+                    <!-- Búsqueda por cuenta -->
+                    <TextBox x:Name="CuentaFiltroTextBox"
+                            Grid.Column="1"
+                            materialDesign:HintAssist.Hint="📧 Cuenta/Email"
+                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Margin="0,0,8,0"
+                            TextChanged="BuscarTextBox_TextChanged"/>
+
+                    <!-- Filtro por plataforma -->
+                    <ComboBox x:Name="PlataformaFiltroComboBox"
+                             Grid.Column="2"
+                             materialDesign:HintAssist.Hint="📺 Plataforma"
+                             Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                             DisplayMemberPath="Nombre"
+                             Margin="0,0,8,0"
+                             SelectionChanged="FiltroComboBox_SelectionChanged"/>
+
+                    <!-- Filtro por estado -->
+                    <ComboBox x:Name="EstadoFiltroComboBox"
+                             Grid.Column="3"
+                             materialDesign:HintAssist.Hint="📊 Estado"
+                             Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                             Margin="0,0,8,0"
+                             SelectionChanged="FiltroComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Todos" Tag="" IsSelected="True"/>
+                        <ComboBoxItem Content="✅ Disponible" Tag="disponible"/>
+                        <ComboBoxItem Content="🔒 Ocupado" Tag="ocupado"/>
+                    </ComboBox>
+
+                    <!-- Contador de resultados -->
+                    <Border Grid.Column="4"
+                           Background="#E3F2FD"
+                           CornerRadius="4"
+                           Padding="12,8">
+                        <StackPanel Orientation="Horizontal" 
+                                   HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="FilterCheck" 
+                                                    VerticalAlignment="Center"
+                                                    Foreground="#1976D2"/>
+                            <TextBlock x:Name="ResultadosTextBlock"
+                                      Text="0 resultados"
+                                      VerticalAlignment="Center"
+                                      Margin="8,0,0,0"
+                                      FontWeight="SemiBold"
+                                      Foreground="#1976D2"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Expander>
+        </materialDesign:Card>
+
+        <!-- DataGrid de perfiles -->
+        <materialDesign:Card Grid.Row="3"
                              Padding="16"
                              materialDesign:ElevationAssist.Elevation="Dp2">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Buscador -->
-                <TextBox x:Name="BuscarTextBox"
-                         Grid.Row="0"
-                         materialDesign:HintAssist.Hint="Buscar perfil..."
-                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         Margin="0,0,0,16"
-                         TextChanged="BuscarTextBox_TextChanged"/>
-
                 <!-- DataGrid -->
                 <DataGrid x:Name="PerfilesDataGrid"
-                          Grid.Row="1"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           CanUserDeleteRows="False"
@@ -165,7 +229,6 @@
 
                 <!-- Loading overlay -->
                 <Grid x:Name="LoadingOverlay"
-                      Grid.Row="1"
                       Background="#80000000"
                       Visibility="Collapsed">
                     <StackPanel VerticalAlignment="Center" 

@@ -198,6 +198,62 @@ namespace StreamManager
                 Close();
             }
         }
-    }
-}
+        public async Task RefrescarAlertasAsync()
+        {
+            // Reutilizamos la lógica completa que ya tienes programada
+            await EjecutarMantenimientoCompletoAsync();
+        }
 
+        public void NavigateToPage(string pageName)
+        {
+            string pagePath = "";
+            string title = "";
+
+            // 1. Definimos la ruta del archivo XAML según el nombre que recibimos
+            switch (pageName)
+            {
+                case "GestionPagosClientesPage":
+                    pagePath = "Views/Pages/GestionPagosClientesPage.xaml";
+                    title = "/ Gestión de Pagos Clientes";
+                    break;
+
+                case "PagosPlataformaPage":
+                    pagePath = "Views/Pages/PagosPlataformaPage.xaml";
+                    title = "/ Pagos a Plataformas";
+                    break;
+
+                case "AlertasPage":
+                    pagePath = "Views/Pages/AlertasPage.xaml";
+                    title = "/ Alertas";
+                    break;
+
+                // Agrega aquí más páginas si las necesitas en el futuro
+                case "DashboardPage":
+                    pagePath = "Views/Pages/DashboardPage.xaml";
+                    title = "/ Dashboard";
+                    break;
+
+                default:
+                    MessageBox.Show($"Página no encontrada: {pageName}", "Error de Navegación");
+                    return;
+            }
+
+            // 2. Ejecutamos la navegación
+            try
+            {
+                var uri = new Uri(pagePath, UriKind.Relative);
+                MainFrame.Navigate(uri);
+                PageTitleTextBlock.Text = title;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"No se pudo navegar a {pagePath}.\nError: {ex.Message}",
+                    "Error Crítico",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+    } // Fin de la clase MainWindow
+} // Fin del namespace

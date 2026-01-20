@@ -9,6 +9,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -18,6 +19,7 @@
                    FontWeight="Bold"
                    Margin="0,0,0,8"/>
 
+        <!-- Cards de Resumen -->
         <Grid Grid.Row="1" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -134,92 +136,174 @@
             </materialDesign:Card>
         </Grid>
 
-        <Grid Grid.Row="2" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <TextBox x:Name="BusquedaTextBox"
-                    Grid.Column="0"
-                    materialDesign:HintAssist.Hint="Buscar por cliente o plataforma..."
-                    Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                    TextChanged="BusquedaTextBox_TextChanged"
-                    Margin="0,0,12,0"/>
-
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <ComboBox x:Name="EstadoFiltroComboBox"
-                         materialDesign:HintAssist.Hint="Estado"
-                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                         Width="150"
-                         Margin="0,0,8,0"
-                         SelectionChanged="FiltroComboBox_SelectionChanged">
-                    <ComboBoxItem Content="Todos" Tag="todos" IsSelected="True"/>
-                    <ComboBoxItem Content="Vencidos" Tag="vencidos"/>
-                    <ComboBoxItem Content="Vencen Hoy" Tag="hoy"/>
-                    <ComboBoxItem Content="Próximos 7 Días" Tag="proximos"/>
-                    <ComboBoxItem Content="Activas" Tag="activa"/>
-                </ComboBox>
-
-                <Button x:Name="RefrescarButton"
-                       Style="{StaticResource MaterialDesignRaisedButton}"
-                       Click="RefrescarButton_Click"
-                       ToolTip="Refrescar">
+        <!-- Barra de acciones -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    Margin="0,0,0,16">
+            <Button x:Name="RefrescarButton"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="RefrescarButton_Click"
+                    Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Refresh" 
-                                            Width="20" 
-                                            Height="20"/>
-                </Button>
-            </StackPanel>
-        </Grid>
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="REFRESCAR" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
 
+            <Button x:Name="LimpiarFiltrosButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="LimpiarFiltrosButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FilterRemove" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="LIMPIAR FILTROS" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Panel de Filtros Avanzados -->
         <materialDesign:Card Grid.Row="3"
-                             Padding="0"
-                             materialDesign:ElevationAssist.Elevation="Dp2">
+                             Padding="16"
+                             Margin="0,0,0,16"
+                             materialDesign:ElevationAssist.Elevation="Dp1">
+            <Expander x:Name="FiltrosExpander"
+                     Header="Filtros Avanzados"
+                     IsExpanded="True">
+                <Grid Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Búsqueda por cliente -->
+                        <TextBox x:Name="BusquedaTextBox"
+                                Grid.Column="0"
+                                materialDesign:HintAssist.Hint="🔍 Cliente"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Margin="0,0,8,0"
+                                TextChanged="BusquedaTextBox_TextChanged"/>
+
+                        <!-- Filtro por plataforma -->
+                        <ComboBox x:Name="PlataformaFiltroComboBox"
+                                 Grid.Column="1"
+                                 materialDesign:HintAssist.Hint="📺 Plataforma"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 DisplayMemberPath="Nombre"
+                                 Margin="0,0,8,0"
+                                 SelectionChanged="FiltroComboBox_SelectionChanged"/>
+
+                        <!-- Filtro por estado de pago -->
+                        <ComboBox x:Name="EstadoFiltroComboBox"
+                                 Grid.Column="2"
+                                 materialDesign:HintAssist.Hint="📊 Estado"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 Margin="0,0,8,0"
+                                 SelectionChanged="FiltroComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Todos" Tag="todos" IsSelected="True"/>
+                            <ComboBoxItem Content="🔴 Vencidos" Tag="vencidos"/>
+                            <ComboBoxItem Content="⏰ Vencen Hoy" Tag="hoy"/>
+                            <ComboBoxItem Content="📅 Próximos 7 días" Tag="proximos"/>
+                            <ComboBoxItem Content="✅ Activas" Tag="activa"/>
+                        </ComboBox>
+
+                        <!-- Filtro fecha DESDE -->
+                        <DatePicker x:Name="FechaDesdeFilterPicker"
+                                   Grid.Column="3"
+                                   materialDesign:HintAssist.Hint="📅 Desde"
+                                   Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                   Margin="0,0,8,0"
+                                   SelectedDateChanged="FechaFiltro_SelectedDateChanged"/>
+
+                        <!-- Filtro fecha HASTA -->
+                        <DatePicker x:Name="FechaHastaFilterPicker"
+                                   Grid.Column="4"
+                                   materialDesign:HintAssist.Hint="📅 Hasta"
+                                   Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                   Margin="0,0,8,0"
+                                   SelectedDateChanged="FechaFiltro_SelectedDateChanged"/>
+
+                        <!-- Contador de resultados -->
+                        <Border Grid.Column="5"
+                               Background="#E3F2FD"
+                               CornerRadius="4"
+                               Padding="12,8">
+                            <StackPanel Orientation="Horizontal" 
+                                       HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="FilterCheck" 
+                                                        VerticalAlignment="Center"
+                                                        Foreground="#1976D2"/>
+                                <TextBlock x:Name="ResultadosTextBlock"
+                                          Text="0 resultados"
+                                          VerticalAlignment="Center"
+                                          Margin="8,0,0,0"
+                                          FontWeight="SemiBold"
+                                          Foreground="#1976D2"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Expander>
+        </materialDesign:Card>
+
+        <!-- Lista de Suscripciones -->
+        <materialDesign:Card Grid.Row="4" Padding="0" materialDesign:ElevationAssist.Elevation="Dp2">
             <Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl x:Name="SuscripcionesItemsControl">
+                    <ItemsControl x:Name="SuscripcionesItemsControl" Padding="16">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border BorderBrush="#E0E0E0"
-                                       BorderThickness="0,0,0,1"
-                                       Background="{Binding EstadoBackground}"
-                                       Padding="24">
+                                <Border Background="{Binding EstadoBackground}"
+                                       BorderBrush="#E0E0E0"
+                                       BorderThickness="1"
+                                       CornerRadius="8"
+                                       Padding="20"
+                                       Margin="0,0,0,12"
+                                       materialDesign:ElevationAssist.Elevation="Dp1">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="60"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
                                         <Border Grid.Column="0"
-                                               Width="56"
-                                               Height="56"
-                                               CornerRadius="28"
-                                               Background="{Binding PlataformaColor}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,20,0">
+                                               Width="50"
+                                               Height="50"
+                                               Background="#2196F3"
+                                               CornerRadius="25"
+                                               VerticalAlignment="Center">
                                             <TextBlock Text="{Binding ClienteIniciales}"
-                                                      FontSize="20"
+                                                      FontSize="18"
                                                       FontWeight="Bold"
                                                       Foreground="White"
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"/>
                                         </Border>
 
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding ClienteNombre}"
-                                                      FontSize="18"
-                                                      FontWeight="Bold"
-                                                      Margin="0,0,0,4"/>
-
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                                <materialDesign:PackIcon Kind="Phone"
-                                                                        Width="14"
-                                                                        Height="14"
-                                                                        Opacity="0.7"
-                                                                        VerticalAlignment="Center"
-                                                                        Margin="0,0,4,0"/>
+                                        <StackPanel Grid.Column="1" 
+                                                   VerticalAlignment="Center"
+                                                   Margin="16,0,0,0">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                <TextBlock Text="{Binding ClienteNombre}"
+                                                          FontSize="18"
+                                                          FontWeight="Bold"
+                                                          VerticalAlignment="Center"
+                                                          Margin="0,0,4,0"/>
                                                 <TextBlock Text="{Binding ClienteTelefono}"
                                                           FontSize="13"
                                                           Opacity="0.7"

@@ -31,7 +31,7 @@ namespace StreamManager.Views.Controls
             Loaded += async (s, e) => await ActualizarContadorAsync();
         }
 
-        private async Task ActualizarContadorAsync()
+        public async Task ActualizarContadorAsync()
         {
             try
             {
