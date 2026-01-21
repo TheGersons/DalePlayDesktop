@@ -149,6 +149,7 @@ namespace StreamManager.Views.Pages
         private void LimpiarFiltrosButton_Click(object sender, RoutedEventArgs e)
         {
             BusquedaTextBox.Text = string.Empty;
+            TelefonoTextBox.Text = string.Empty;
             PlataformaFiltroComboBox.SelectedIndex = 0;
             EstadoFiltroComboBox.SelectedIndex = 0;
             FechaDesdeFilterPicker.SelectedDate = null;
@@ -171,6 +172,7 @@ namespace StreamManager.Views.Pages
 
                 var estadoFiltro = (EstadoFiltroComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "todos";
                 var textoBusqueda = BusquedaTextBox.Text?.ToLower() ?? "";
+                var textoTelefono = TelefonoTextBox?.Text?.ToLower() ?? "";
                 var plataformaSeleccionada = PlataformaFiltroComboBox.SelectedItem as Plataforma;
                 var fechaDesde = FechaDesdeFilterPicker.SelectedDate;
                 var fechaHasta = FechaHastaFilterPicker.SelectedDate;
@@ -216,11 +218,17 @@ namespace StreamManager.Views.Pages
 
                     if (cliente == null || plataforma == null) continue;
 
-                    // Filtro de búsqueda por cliente
+                    // Filtro de búsqueda por nombre de cliente
                     if (!string.IsNullOrWhiteSpace(textoBusqueda))
                     {
-                        if (!cliente.NombreCompleto.ToLower().Contains(textoBusqueda) &&
-                            !(cliente.Telefono?.Contains(textoBusqueda) ?? false))
+                        if (!cliente.NombreCompleto.ToLower().Contains(textoBusqueda))
+                            continue;
+                    }
+
+                    // Filtro de búsqueda por teléfono
+                    if (!string.IsNullOrWhiteSpace(textoTelefono))
+                    {
+                        if (!(cliente.Telefono?.ToLower().Contains(textoTelefono) ?? false))
                             continue;
                     }
 

@@ -181,23 +181,66 @@ namespace StreamManager.Views.Pages
                     {
                         LoadingOverlay.Visibility = Visibility.Visible;
 
-                        await _supabase.ActualizarClienteAsync(dialog.Cliente);
+                        var clienteActualizado = dialog.Cliente;
 
-                        MessageBox.Show(
-                            "Cliente actualizado exitosamente",
-                            "Éxito",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
+                        // Validación 1: Teléfono duplicado
+                        var todosClientes = await _supabase.ObtenerClientesAsync();
+                        if (!string.IsNullOrWhiteSpace(clienteActualizado.Telefono))
+                        {
+                            var telefonoDuplicado = todosClientes.Any(c =>
+                                c.Id != cliente.Id &&
+                                c.Telefono == clienteActualizado.Telefono);
+
+                            if (telefonoDuplicado)
+                            {
+                                LoadingOverlay.Visibility = Visibility.Collapsed;
+                                MessageBox.Show(
+                                    $"⚠️ El teléfono '{clienteActualizado.Telefono}' ya está registrado.\n\n" +
+                                    "Por favor usa un número diferente.",
+                                    "Teléfono duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                return;
+                            }
+                        }
+
+                        // Validación 2: Desactivar con suscripciones activas
+                        if (cliente.Estado == "activo" && clienteActualizado.Estado == "inactivo")
+                        {
+                            var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
+                            var suscripcionesActivas = suscripciones.Where(s =>
+                                s.ClienteId == cliente.Id &&
+                                s.Estado == "activa").ToList();
+
+                            if (suscripcionesActivas.Any())
+                            {
+                                LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                                var resultado = MessageBox.Show(
+                                    $"⚠️ El cliente tiene {suscripcionesActivas.Count} suscripción(es) activa(s)\n\n" +
+                                    "Al desactivar el cliente, podrías afectar el servicio.\n\n" +
+                                    "Recomendación:\n" +
+                                    "1. Cancela las suscripciones activas primero\n" +
+                                    "2. Luego desactiva el cliente\n\n" +
+                                    "¿Deseas continuar de todos modos?",
+                                    "Confirmación", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                                if (resultado == MessageBoxResult.No)
+                                    return;
+
+                                LoadingOverlay.Visibility = Visibility.Visible;
+                            }
+                        }
+
+                        await _supabase.ActualizarClienteAsync(clienteActualizado);
+
+                        MessageBox.Show("Cliente actualizado exitosamente", "Éxito",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
 
                         await CargarClientesAsync();
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(
-                            $"Error al actualizar cliente: {ex.Message}",
-                            "Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
+                        MessageBox.Show($"Error al actualizar cliente:\n\n{ex.Message}",
+                            "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                     finally
                     {
@@ -224,46 +267,83 @@ namespace StreamManager.Views.Pages
         {
             if (sender is Button button && button.Tag is Cliente cliente)
             {
-                var confirmDialog = new ConfirmDialog(
-                    $"¿Estás seguro de eliminar al cliente '{cliente.NombreCompleto}'?\n\n" +
-                    "⚠️ ADVERTENCIA: Esta acción eliminará:\n" +
-                    "• Todas las suscripciones del cliente\n" +
-                    "• Todos los pagos asociados\n\n" +
-                    "Esta acción NO se puede deshacer.",
-                    "Eliminar Cliente",
-                    "Delete")
+                try
                 {
-                    Owner = Window.GetWindow(this)
-                };
+                    LoadingOverlay.Visibility = Visibility.Visible;
 
-                if (confirmDialog.ShowDialog() == true)
-                {
-                    try
+                    // Validar suscripciones activas
+                    var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
+                    var suscripcionesActivas = suscripciones.Where(s =>
+                        s.ClienteId == cliente.Id &&
+                        s.Estado == "activa").ToList();
+
+                    if (suscripcionesActivas.Any())
+                    {
+                        LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                        var plataformas = await _supabase.ObtenerPlataformasAsync();
+                        var listaPlataf = suscripcionesActivas
+                            .Select(s => plataformas.FirstOrDefault(p => p.Id == s.PlataformaId)?.Nombre ?? "Desconocida")
+                            .Distinct()
+                            .Take(3);
+
+                        var mensaje = $"⚠️ No se puede eliminar al cliente '{cliente.NombreCompleto}'\n\n" +
+                                    $"Tiene {suscripcionesActivas.Count} suscripción(es) activa(s):\n" +
+                                    $"• {string.Join("\n• ", listaPlataf)}\n\n" +
+                                    "Acción requerida:\n" +
+                                    "1. Cancela todas las suscripciones activas\n" +
+                                    "2. Luego podrás eliminar el cliente";
+
+                        MessageBox.Show(mensaje, "No se puede eliminar", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // Verificar historial de pagos
+                    var pagos = await _supabase.ObtenerPagosAsync();
+                    var pagosCliente = pagos.Where(p => p.ClienteId == cliente.Id).ToList();
+
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                    string mensajeConfirm;
+                    if (pagosCliente.Any())
+                    {
+                        var totalPagado = pagosCliente.Sum(p => p.Monto);
+                        mensajeConfirm = $"⚠️ ADVERTENCIA: El cliente '{cliente.NombreCompleto}' tiene historial\n\n" +
+                                       $"• {pagosCliente.Count} pago(s) registrado(s)\n" +
+                                       $"• Total pagado: L {totalPagado:N2}\n\n" +
+                                       "Si eliminas este cliente, se perderá el historial de pagos.\n\n" +
+                                       "¿Deseas continuar?";
+                    }
+                    else
+                    {
+                        mensajeConfirm = $"¿Estás seguro de eliminar al cliente '{cliente.NombreCompleto}'?\n\n" +
+                                       "Esta acción NO se puede deshacer.";
+                    }
+
+                    var confirmDialog = new ConfirmDialog(mensajeConfirm, "Eliminar Cliente", "Delete")
+                    {
+                        Owner = Window.GetWindow(this)
+                    };
+
+                    if (confirmDialog.ShowDialog() == true)
                     {
                         LoadingOverlay.Visibility = Visibility.Visible;
-
                         await _supabase.EliminarClienteAsync(cliente.Id);
 
-                        MessageBox.Show(
-                            "Cliente eliminado exitosamente",
-                            "Éxito",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
+                        MessageBox.Show("Cliente eliminado exitosamente", "Éxito",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
 
                         await CargarClientesAsync();
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(
-                            $"Error al eliminar cliente: {ex.Message}",
-                            "Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                    finally
-                    {
-                        LoadingOverlay.Visibility = Visibility.Collapsed;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error al eliminar cliente:\n\n{ex.Message}",
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
                 }
             }
         }

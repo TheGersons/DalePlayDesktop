@@ -12,6 +12,7 @@ namespace StreamManager.Views.Pages
     {
         private readonly SupabaseService _supabase;
         private List<PagoPlataforma> _todosPagosPlataf = new();
+        private List<Plataforma> _todasPlataformas = new();
 
         public PagosPlataformaPage()
         {
@@ -37,8 +38,13 @@ namespace StreamManager.Views.Pages
                 // Obtener todos los pagos a plataformas
                 _todosPagosPlataf = await _supabase.ObtenerPagosPlataformaAsync();
 
+                // Cargar plataformas para filtro
+                var plataformas = await _supabase.ObtenerPlataformasAsync();
+                _todasPlataformas = plataformas.Where(p => p.Estado == "activa").ToList();
+                CargarFiltros();
+
                 // Aplicar filtros
-                AplicarFiltros();
+                await AplicarFiltrosAsync();
 
                 // Actualizar cards de resumen
                 ActualizarResumen();
@@ -55,6 +61,14 @@ namespace StreamManager.Views.Pages
             {
                 LoadingOverlay.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private void CargarFiltros()
+        {
+            var plataformasParaFiltro = new List<Plataforma> { new Plataforma { Id = Guid.Empty, Nombre = "Todas las plataformas" } };
+            plataformasParaFiltro.AddRange(_todasPlataformas.OrderBy(p => p.Nombre));
+            PlataformaFiltroComboBox.ItemsSource = plataformasParaFiltro;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
         }
 
         private void ActualizarResumen()
@@ -87,11 +101,15 @@ namespace StreamManager.Views.Pages
             }
         }
 
-        private async void AplicarFiltros()
+        private async Task AplicarFiltrosAsync()
         {
             try
             {
+                var busqueda = BusquedaTextBox.Text?.ToLower() ?? "";
                 var estadoFiltro = (EstadoFiltroComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "todos";
+                var plataformaSeleccionada = PlataformaFiltroComboBox.SelectedItem as Plataforma;
+                var fechaDesde = FechaDesdeFilterPicker.SelectedDate;
+                var fechaHasta = FechaHastaFilterPicker.SelectedDate;
 
                 var pagosFiltrados = _todosPagosPlataf.AsEnumerable();
 
@@ -99,6 +117,19 @@ namespace StreamManager.Views.Pages
                 if (estadoFiltro != "todos")
                 {
                     pagosFiltrados = pagosFiltrados.Where(p => p.Estado == estadoFiltro);
+                }
+
+                // Filtrar por rango de fechas
+                if (fechaDesde.HasValue)
+                {
+                    var desde = DateOnly.FromDateTime(fechaDesde.Value);
+                    pagosFiltrados = pagosFiltrados.Where(p => p.FechaProximoPago >= desde);
+                }
+
+                if (fechaHasta.HasValue)
+                {
+                    var hasta = DateOnly.FromDateTime(fechaHasta.Value);
+                    pagosFiltrados = pagosFiltrados.Where(p => p.FechaProximoPago <= hasta);
                 }
 
                 // Obtener datos relacionados
@@ -112,15 +143,32 @@ namespace StreamManager.Views.Pages
                     var cuenta = cuentas.FirstOrDefault(c => c.Id == pago.CuentaId);
                     var plataforma = plataformas.FirstOrDefault(p => p.Id == pago.PlataformaId);
 
+                    if (plataforma == null) continue;
+
+                    // Filtro de búsqueda (plataforma o cuenta)
+                    if (!string.IsNullOrWhiteSpace(busqueda))
+                    {
+                        if (!plataforma.Nombre.ToLower().Contains(busqueda) &&
+                            !(cuenta?.Email.ToLower().Contains(busqueda) ?? false))
+                            continue;
+                    }
+
+                    // Filtro por plataforma específica
+                    if (plataformaSeleccionada != null && plataformaSeleccionada.Id != Guid.Empty)
+                    {
+                        if (plataforma.Nombre != plataformaSeleccionada.Nombre)
+                            continue;
+                    }
+
                     var diasRestantes = (pago.FechaProximoPago.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
 
                     var vm = new PagoPlataformaViewModel
                     {
                         Id = pago.Id,
-                        PlataformaNombre = plataforma?.Nombre ?? "Plataforma desconocida",
-                        PlataformaIcono = plataforma?.Icono ?? "Television",
-                        PlataformaColor = plataforma != null ? 
-                            new SolidColorBrush((Color)ColorConverter.ConvertFromString(plataforma.Color)) : 
+                        PlataformaNombre = plataforma.Nombre,
+                        PlataformaIcono = plataforma.Icono ?? "Television",
+                        PlataformaColor = !string.IsNullOrEmpty(plataforma.Color) ?
+                            new SolidColorBrush((Color)ColorConverter.ConvertFromString(plataforma.Color)) :
                             Brushes.Gray,
                         CuentaEmail = cuenta?.Email ?? "N/A",
                         MontoMensualTexto = $"L {pago.MontoMensual:N2}",
@@ -130,8 +178,8 @@ namespace StreamManager.Views.Pages
                         Estado = pago.Estado,
                         EstadoTexto = ObtenerTextoEstado(pago.Estado),
                         EstadoColor = ObtenerColorEstado(pago.Estado),
-                        EstadoBackground = pago.Estado == "vencido" ? 
-                            new SolidColorBrush(Color.FromRgb(255, 245, 245)) : 
+                        EstadoBackground = pago.Estado == "vencido" ?
+                            new SolidColorBrush(Color.FromRgb(255, 245, 245)) :
                             Brushes.White,
                         MetodoPagoPreferido = CapitalizarMetodo(pago.MetodoPagoPreferido)
                     };
@@ -149,6 +197,8 @@ namespace StreamManager.Views.Pages
                     PagosPlataformaItemsControl.ItemsSource = null;
                     EmptyStatePanel.Visibility = Visibility.Visible;
                 }
+
+                ActualizarContadorResultados(pagosViewModel.Count);
             }
             catch (Exception ex)
             {
@@ -158,6 +208,33 @@ namespace StreamManager.Views.Pages
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
+        }
+
+        private void ActualizarContadorResultados(int cantidad)
+        {
+            if (ResultadosTextBlock != null)
+            {
+                ResultadosTextBlock.Text = cantidad == 1
+                    ? "1 resultado"
+                    : $"{cantidad} resultados";
+            }
+        }
+
+        private void LimpiarFiltrosButton_Click(object sender, RoutedEventArgs e)
+        {
+            BusquedaTextBox.Text = string.Empty;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
+            EstadoFiltroComboBox.SelectedIndex = 0;
+            FechaDesdeFilterPicker.SelectedDate = null;
+            FechaHastaFilterPicker.SelectedDate = null;
+
+            Task.Run(async () =>
+            {
+                await Dispatcher.InvokeAsync(async () =>
+                {
+                    await AplicarFiltrosAsync();
+                });
+            });
         }
 
         private string ObtenerTextoDiasRestantes(int dias)
@@ -170,7 +247,7 @@ namespace StreamManager.Views.Pages
                 return "⏰ Vence MAÑANA";
             if (dias <= 7)
                 return $"📅 Vence en {dias} días";
-            
+
             return $"✓ Vence en {dias} días";
         }
 
@@ -184,7 +261,7 @@ namespace StreamManager.Views.Pages
                 return new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Naranja
             if (dias <= 7)
                 return new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Amarillo
-            
+
             return new SolidColorBrush(Color.FromRgb(76, 175, 80)); // Verde
         }
 
@@ -195,7 +272,7 @@ namespace StreamManager.Views.Pages
                 "vencido" => "VENCIDO",
                 "por_pagar" => "POR PAGAR",
                 "al_dia" => "AL DÍA",
-                _ => estado.ToUpper()
+                _ => "DESCONOCIDO"
             };
         }
 
@@ -212,19 +289,12 @@ namespace StreamManager.Views.Pages
 
         private string CapitalizarMetodo(string metodo)
         {
-            return metodo switch
-            {
-                "transferencia" => "Transferencia",
-                "deposito" => "Depósito",
-                "efectivo" => "Efectivo",
-                "tarjeta" => "Tarjeta",
-                _ => metodo
-            };
+            if (string.IsNullOrWhiteSpace(metodo)) return "N/A";
+            return char.ToUpper(metodo[0]) + metodo.Substring(1).ToLower();
         }
 
-        private async void NuevoPagoButton_Click(object sender, RoutedEventArgs e)
+        private void NuevoPagoButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implementar dialog para configurar nuevo pago a plataforma
             MessageBox.Show(
                 "Función en desarrollo.\n\nPronto podrás configurar pagos automáticos a plataformas.",
                 "Nuevo Pago a Plataforma",
@@ -237,11 +307,35 @@ namespace StreamManager.Views.Pages
             await CargarPagosPlataformaAsync();
         }
 
-        private void EstadoFiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void EstadoFiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsLoaded)
             {
-                AplicarFiltros();
+                await AplicarFiltrosAsync();
+            }
+        }
+
+        private async void BusquedaTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                await AplicarFiltrosAsync();
+            }
+        }
+
+        private async void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                await AplicarFiltrosAsync();
+            }
+        }
+
+        private async void FechaFiltro_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                await AplicarFiltrosAsync();
             }
         }
 

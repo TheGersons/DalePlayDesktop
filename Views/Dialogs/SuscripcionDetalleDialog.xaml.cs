@@ -1,3 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
+using StreamManager.Data.Models;
+using StreamManager.Services;
 using StreamManager.ViewModels;
 using System.Windows;
 using System.Windows.Media;
@@ -6,14 +9,21 @@ namespace StreamManager.Views.Dialogs
 {
     public partial class SuscripcionDetalleDialog : Window
     {
+        private readonly SupabaseService _supabase;
+        private string _correoElectronico = string.Empty;
+        private string _contrasena = string.Empty;
+
         public SuscripcionDetalleDialog(SuscripcionViewModel viewModel)
         {
             InitializeComponent();
 
+            _supabase = App.ServiceProvider?.GetRequiredService<SupabaseService>()
+                ?? throw new InvalidOperationException("SupabaseService no disponible");
+
             CargarDatos(viewModel);
         }
 
-        private void CargarDatos(SuscripcionViewModel viewModel)
+        private async void CargarDatos(SuscripcionViewModel viewModel)
         {
             // Header
             ClienteTextBlock.Text = viewModel.ClienteNombre;
@@ -81,10 +91,118 @@ namespace StreamManager.Views.Dialogs
                     : $"{años} {(años == 1 ? "año" : "años")}";
             }
 
+            // Información del Cliente
+            ClienteNombreTextBlock.Text = viewModel.ClienteNombre;
+
+            // Obtener teléfono del cliente
+            try
+            {
+                var clientes = await _supabase.ObtenerClientesAsync();
+                var cliente = clientes.FirstOrDefault(c => c.NombreCompleto == viewModel.ClienteNombre);
+
+                if (cliente != null)
+                {
+                    ClienteTelefonoTextBlock.Text = cliente.Telefono ?? "Sin teléfono";
+                }
+                else
+                {
+                    ClienteTelefonoTextBlock.Text = "Sin teléfono";
+                }
+            }
+            catch
+            {
+                ClienteTelefonoTextBlock.Text = "Error al cargar";
+            }
+
+            // Credenciales de Acceso - Obtener de la cuenta
+            try
+            {
+                var perfiles = await _supabase.ObtenerPerfilesAsync();
+                var perfil = perfiles.FirstOrDefault(p => p.NombrePerfil == viewModel.PerfilNombre);
+
+                if (perfil != null)
+                {
+                    var cuentas = await _supabase.ObtenerCuentasAsync();
+                    var cuenta = cuentas.FirstOrDefault(c => c.Id == perfil.CuentaId);
+
+                    if (cuenta != null)
+                    {
+                        _correoElectronico = cuenta.Email;
+                        _contrasena = cuenta.Password;
+
+                        CorreoTextBlock.Text = cuenta.Email;
+                        ContrasenaTextBlock.Text = "••••••••";
+                    }
+                    else
+                    {
+                        CorreoTextBlock.Text = "No disponible";
+                        ContrasenaTextBlock.Text = "••••••••";
+                    }
+                }
+                else
+                {
+                    CorreoTextBlock.Text = "No disponible";
+                    ContrasenaTextBlock.Text = "••••••••";
+                }
+            }
+            catch
+            {
+                CorreoTextBlock.Text = "Error al cargar";
+                ContrasenaTextBlock.Text = "••••••••";
+            }
+
             // Notas
             NotasTextBlock.Text = string.IsNullOrWhiteSpace(viewModel.Notas)
                 ? "Sin notas"
                 : viewModel.Notas;
+        }
+
+        private void CopiarCorreoButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(_correoElectronico))
+            {
+                try
+                {
+                    Clipboard.SetText(_correoElectronico);
+                    MessageBox.Show(
+                        "Correo electrónico copiado al portapapeles",
+                        "Éxito",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Error al copiar: {ex.Message}",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void CopiarContrasenaButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(_contrasena))
+            {
+                try
+                {
+                    Clipboard.SetText(_contrasena);
+                    MessageBox.Show(
+                        "Contraseña copiada al portapapeles",
+                        "Éxito",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Error al copiar: {ex.Message}",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            }
         }
 
         private void CerrarButton_Click(object sender, RoutedEventArgs e)

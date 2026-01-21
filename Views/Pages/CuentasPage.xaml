@@ -4,192 +4,315 @@
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       Title="Cuentas de Correo">
 
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                  HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- Título -->
-        <TextBlock Grid.Row="0"
-                   Text="Cuentas de Correo" 
-                   Style="{StaticResource PageTitle}"/>
+            <!-- Título -->
+            <TextBlock Grid.Row="0"
+                       Text="Cuentas de Correo" 
+                       Style="{StaticResource PageTitle}"/>
 
-        <!-- Barra de acciones -->
-        <StackPanel Grid.Row="1" 
-                    Orientation="Horizontal" 
-                    Margin="0,0,0,16">
-            <Button x:Name="NuevoButton"
-                    Style="{StaticResource MaterialDesignRaisedButton}"
-                    Click="NuevoButton_Click"
-                    Margin="0,0,8,0">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="EmailPlus" 
-                                            VerticalAlignment="Center"/>
-                    <TextBlock Text="NUEVA CUENTA" 
-                              Margin="8,0,0,0"
-                              VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-
-            <Button x:Name="RefrescarButton"
-                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Click="RefrescarButton_Click"
-                    Margin="0,0,8,0">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Refresh" 
-                                            VerticalAlignment="Center"/>
-                    <TextBlock Text="REFRESCAR" 
-                              Margin="8,0,0,0"
-                              VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-
-            <!-- Filtro por plataforma -->
-            <ComboBox x:Name="PlataformaFiltroComboBox"
-                     materialDesign:HintAssist.Hint="Filtrar por plataforma"
-                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                     DisplayMemberPath="Nombre"
-                     MinWidth="180"
-                     SelectionChanged="FiltroComboBox_SelectionChanged"/>
-        </StackPanel>
-
-        <!-- DataGrid de cuentas -->
-        <materialDesign:Card Grid.Row="2"
-                             Padding="16"
-                             materialDesign:ElevationAssist.Elevation="Dp2">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Buscador -->
-                <TextBox x:Name="BuscarTextBox"
-                         Grid.Row="0"
-                         materialDesign:HintAssist.Hint="Buscar por correo electrónico..."
-                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         Margin="0,0,0,16"
-                         TextChanged="BuscarTextBox_TextChanged"/>
-
-                <!-- DataGrid -->
-                <DataGrid x:Name="CuentasDataGrid"
-                          Grid.Row="1"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          IsReadOnly="True"
-                          SelectionMode="Single"
-                          materialDesign:DataGridAssist.CellPadding="8"
-                          materialDesign:DataGridAssist.ColumnHeaderPadding="8">
-                    <DataGrid.Columns>
-                        <!-- Plataforma -->
-                        <DataGridTextColumn Header="Plataforma" 
-                                          Binding="{Binding PlataformaNombre}"
-                                          Width="150"/>
-
-                        <!-- Correo Electrónico -->
-                        <DataGridTextColumn Header="Correo Electrónico" 
-                                          Binding="{Binding CorreoElectronico}"
-                                          Width="*"/>
-
-                        <!-- Contraseña (oculta) -->
-                        <DataGridTemplateColumn Header="Contraseña" Width="150">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="••••••••" 
-                                                  VerticalAlignment="Center"
-                                                  Margin="0,0,8,0"/>
-                                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                               ToolTip="Copiar contraseña"
-                                               Click="CopiarPasswordButton_Click"
-                                               Tag="{Binding}">
-                                            <materialDesign:PackIcon Kind="ContentCopy" Width="16" Height="16"/>
-                                        </Button>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <!-- Perfiles Disponibles -->
-                        <DataGridTextColumn Header="Perfiles Disp." 
-                                          Binding="{Binding PerfilesDisponibles}"
-                                          Width="120"/>
-
-                        <!-- Fecha Creación -->
-                        <DataGridTextColumn Header="Creación" 
-                                          Binding="{Binding FechaCreacion, StringFormat=dd/MM/yyyy}"
-                                          Width="110"/>
-
-                        <!-- Estado -->
-                        <DataGridTemplateColumn Header="Estado" Width="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Border Background="{Binding Estado, Converter={StaticResource EstadoColorConverter}}"
-                                            CornerRadius="12"
-                                            Padding="8,4">
-                                        <TextBlock Text="{Binding Estado}" 
-                                                  Foreground="White"
-                                                  FontWeight="SemiBold"
-                                                  HorizontalAlignment="Center"/>
-                                    </Border>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <!-- Acciones -->
-                        <DataGridTemplateColumn Header="Acciones" Width="180">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" 
-                                               HorizontalAlignment="Center">
-                                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                               ToolTip="Ver detalles"
-                                               Click="VerButton_Click"
-                                               Tag="{Binding}">
-                                            <materialDesign:PackIcon Kind="Eye"/>
-                                        </Button>
-                                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                               ToolTip="Editar"
-                                               Click="EditarButton_Click"
-                                               Tag="{Binding}">
-                                            <materialDesign:PackIcon Kind="Pencil"/>
-                                        </Button>
-                                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                               ToolTip="Eliminar"
-                                               Click="EliminarButton_Click"
-                                               Tag="{Binding}"
-                                               Foreground="Red">
-                                            <materialDesign:PackIcon Kind="Delete"/>
-                                        </Button>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-
-                <!-- Loading overlay -->
-                <Grid x:Name="LoadingOverlay"
-                      Grid.Row="1"
-                      Background="#80000000"
-                      Visibility="Collapsed">
-                    <StackPanel VerticalAlignment="Center" 
-                               HorizontalAlignment="Center">
-                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                    Value="0"
-                                    IsIndeterminate="True"
-                                    Width="48"
-                                    Height="48"/>
-                        <TextBlock Text="Cargando..." 
-                                  Foreground="White"
-                                  Margin="0,16,0,0"
-                                  HorizontalAlignment="Center"/>
+            <!-- Barra de acciones -->
+            <StackPanel Grid.Row="1" 
+                        Orientation="Horizontal" 
+                        Margin="0,0,0,16">
+                <Button x:Name="NuevoButton"
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Click="NuevoButton_Click"
+                        Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="EmailPlus" 
+                                                VerticalAlignment="Center"/>
+                        <TextBlock Text="NUEVA CUENTA" 
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center"/>
                     </StackPanel>
+                </Button>
+
+                <Button x:Name="RefrescarButton"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Click="RefrescarButton_Click"
+                        Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Refresh" 
+                                                VerticalAlignment="Center"/>
+                        <TextBlock Text="REFRESCAR" 
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="LimpiarFiltrosButton"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Click="LimpiarFiltrosButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FilterRemove" 
+                                                VerticalAlignment="Center"/>
+                        <TextBlock Text="LIMPIAR FILTROS" 
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- Panel de Filtros Avanzados -->
+            <materialDesign:Card Grid.Row="2"
+                                 Padding="16"
+                                 Margin="0,0,0,16"
+                                 materialDesign:ElevationAssist.Elevation="Dp1">
+                <Expander x:Name="FiltrosExpander"
+                         Header="Filtros Avanzados"
+                         IsExpanded="True">
+                    <Grid Margin="0,16,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Fila 1 -->
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Búsqueda general -->
+                            <TextBox x:Name="BuscarTextBox"
+                                    Grid.Column="0"
+                                    materialDesign:HintAssist.Hint="🔍 Buscar (correo, plataforma)"
+                                    Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                    Margin="0,0,8,0"
+                                    TextChanged="BuscarTextBox_TextChanged"/>
+
+                            <!-- Filtro por plataforma -->
+                            <ComboBox x:Name="PlataformaFiltroComboBox"
+                                     Grid.Column="1"
+                                     materialDesign:HintAssist.Hint="📺 Plataforma"
+                                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                     DisplayMemberPath="Nombre"
+                                     Margin="0,0,8,0"
+                                     SelectionChanged="FiltroComboBox_SelectionChanged"/>
+
+                            <!-- Filtro por estado -->
+                            <ComboBox x:Name="EstadoFiltroComboBox"
+                                     Grid.Column="2"
+                                     materialDesign:HintAssist.Hint="📊 Estado"
+                                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                     Margin="0,0,8,0"
+                                     SelectionChanged="FiltroComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Todos" Tag="" IsSelected="True"/>
+                                <ComboBoxItem Content="✅ Activo" Tag="activo"/>
+                                <ComboBoxItem Content="❌ Inactivo" Tag="inactivo"/>
+                            </ComboBox>
+
+                            <!-- Filtro por perfiles -->
+                            <ComboBox x:Name="PerfilesFiltroComboBox"
+                                     Grid.Column="3"
+                                     materialDesign:HintAssist.Hint="👥 Perfiles"
+                                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                     SelectionChanged="FiltroComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Todos" Tag="todos" IsSelected="True"/>
+                                <ComboBoxItem Content="✅ Con disponibles" Tag="con_disponibles"/>
+                                <ComboBoxItem Content="❌ Sin disponibles" Tag="sin_disponibles"/>
+                            </ComboBox>
+                        </Grid>
+
+                        <!-- Fila 2 -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Fecha DESDE -->
+                            <DatePicker x:Name="FechaDesdeFilterPicker"
+                                       Grid.Column="0"
+                                       materialDesign:HintAssist.Hint="📅 Creación desde"
+                                       Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                       Margin="0,0,8,0"
+                                       SelectedDateChanged="FechaFiltro_SelectedDateChanged"/>
+
+                            <!-- Fecha HASTA -->
+                            <DatePicker x:Name="FechaHastaFilterPicker"
+                                       Grid.Column="1"
+                                       materialDesign:HintAssist.Hint="📅 Creación hasta"
+                                       Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                       Margin="0,0,8,0"
+                                       SelectedDateChanged="FechaFiltro_SelectedDateChanged"/>
+
+                            <!-- Contador de resultados -->
+                            <Border Grid.Column="2"
+                                   Background="#E3F2FD"
+                                   CornerRadius="4"
+                                   Padding="12,8">
+                                <StackPanel Orientation="Horizontal" 
+                                           HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="FilterCheck" 
+                                                            VerticalAlignment="Center"
+                                                            Foreground="#1976D2"/>
+                                    <TextBlock x:Name="ResultadosTextBlock"
+                                              Text="0 resultados"
+                                              VerticalAlignment="Center"
+                                              Margin="8,0,0,0"
+                                              FontWeight="SemiBold"
+                                              Foreground="#1976D2"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Expander>
+            </materialDesign:Card>
+
+            <!-- DataGrid de cuentas -->
+            <materialDesign:Card Grid.Row="3"
+                                 Padding="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp2">
+                <Grid>
+                    <!-- DataGrid -->
+                    <DataGrid x:Name="CuentasDataGrid"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              EnableRowVirtualization="True"
+                              MinHeight="400"
+                              MaxHeight="600"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Auto"
+                              materialDesign:DataGridAssist.CellPadding="8"
+                              materialDesign:DataGridAssist.ColumnHeaderPadding="8">
+                        <DataGrid.Columns>
+                            <!-- Plataforma -->
+                            <DataGridTextColumn Header="Plataforma" 
+                                              Binding="{Binding PlataformaNombre}"
+                                              Width="150"/>
+
+                            <!-- Correo Electrónico -->
+                            <DataGridTemplateColumn Header="Correo Electrónico" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding CorreoElectronico}" 
+                                                        VerticalAlignment="Center"
+                                                        Margin="0,0,0,0"/>
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    ToolTip="Copiar E-Mail"
+                                                    Click="CopiarEmailButton_Click"
+                                                    Tag="{Binding}">
+                                                <materialDesign:PackIcon Kind="ContentCopy" Width="16" Height="16"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Contraseña (oculta) -->
+                            <DataGridTemplateColumn Header="Contraseña" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="••••••••" 
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"/>
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                   ToolTip="Copiar contraseña"
+                                                   Click="CopiarPasswordButton_Click"
+                                                   Tag="{Binding}">
+                                                <materialDesign:PackIcon Kind="ContentCopy" Width="16" Height="16"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Perfiles Disponibles -->
+                            <DataGridTextColumn Header="Perfiles Disp." 
+                                              Binding="{Binding PerfilesDisponibles}"
+                                              Width="120"/>
+
+                            <!-- Fecha Creación -->
+                            <DataGridTextColumn Header="Creación" 
+                                              Binding="{Binding FechaCreacion, StringFormat=dd/MM/yyyy}"
+                                              Width="110"/>
+
+                            <!-- Estado -->
+                            <DataGridTemplateColumn Header="Estado" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding Estado, Converter={StaticResource EstadoColorConverter}}"
+                                                CornerRadius="12"
+                                                Padding="8,4">
+                                            <TextBlock Text="{Binding Estado}" 
+                                                      Foreground="White"
+                                                      FontWeight="SemiBold"
+                                                      HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Acciones -->
+                            <DataGridTemplateColumn Header="Acciones" Width="180">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" 
+                                                   HorizontalAlignment="Center">
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                   ToolTip="Ver detalles"
+                                                   Click="VerButton_Click"
+                                                   Tag="{Binding}">
+                                                <materialDesign:PackIcon Kind="Eye"/>
+                                            </Button>
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                   ToolTip="Editar"
+                                                   Click="EditarButton_Click"
+                                                   Tag="{Binding}">
+                                                <materialDesign:PackIcon Kind="Pencil"/>
+                                            </Button>
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                   ToolTip="Eliminar"
+                                                   Click="EliminarButton_Click"
+                                                   Tag="{Binding}"
+                                                   Foreground="Red">
+                                                <materialDesign:PackIcon Kind="Delete"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Loading overlay -->
+                    <Grid x:Name="LoadingOverlay"
+                          Background="#80000000"
+                          Visibility="Collapsed">
+                        <StackPanel VerticalAlignment="Center" 
+                                   HorizontalAlignment="Center">
+                            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                        Value="0"
+                                        IsIndeterminate="True"
+                                        Width="48"
+                                        Height="48"/>
+                            <TextBlock Text="Cargando..." 
+                                      Foreground="White"
+                                      Margin="0,16,0,0"
+                                      HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </materialDesign:Card>
-    </Grid>
+            </materialDesign:Card>
+        </Grid>
+    </ScrollViewer>
 </Page>

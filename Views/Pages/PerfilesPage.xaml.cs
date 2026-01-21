@@ -203,7 +203,76 @@ namespace StreamManager.Views.Pages
                     {
                         LoadingOverlay.Visibility = Visibility.Visible;
 
-                        await _supabase.ActualizarPerfilAsync(dialog.Perfil);
+                        var perfilActualizado = dialog.Perfil;
+
+                        // Validación 1: Cambio de cuenta
+                        var cuentaOriginal = viewModel.CuentaCorreoId;
+                        var cuentaNueva = perfilActualizado.CuentaId;
+
+                        if (cuentaOriginal != cuentaNueva)
+                        {
+                            var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
+                            var suscripcionesActivas = suscripciones.Where(s =>
+                                s.PerfilId.HasValue &&
+                                s.PerfilId.Value == viewModel.Id &&
+                                s.Estado == "activa").ToList();
+
+                            if (suscripcionesActivas.Any())
+                            {
+                                LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                                var cuentas = await _supabase.ObtenerCuentasAsync();
+                                var cuentaOriginalObj = cuentas.FirstOrDefault(c => c.Id == cuentaOriginal);
+                                var cuentaNuevaObj = cuentas.FirstOrDefault(c => c.Id == cuentaNueva);
+
+                                var resultado = MessageBox.Show(
+                                    $"⚠️ ADVERTENCIA: Cambio de cuenta detectado\n\n" +
+                                    $"De: {cuentaOriginalObj?.Email ?? "Desconocida"}\n" +
+                                    $"A: {cuentaNuevaObj?.Email ?? "Desconocida"}\n\n" +
+                                    $"Este perfil tiene {suscripcionesActivas.Count} suscripción(es) activa(s).\n\n" +
+                                    "Al cambiar la cuenta, las credenciales de acceso cambiarán para los clientes.\n\n" +
+                                    "¿Deseas continuar?",
+                                    "Confirmación de cambio de cuenta",
+                                    MessageBoxButton.YesNo,
+                                    MessageBoxImage.Warning);
+
+                                if (resultado == MessageBoxResult.No)
+                                {
+                                    return;
+                                }
+
+                                LoadingOverlay.Visibility = Visibility.Visible;
+                            }
+                        }
+
+                        // Validación 2: Cambio de estado a disponible cuando tiene suscripciones
+                        if (viewModel.Estado == "ocupado" && perfilActualizado.Estado == "disponible")
+                        {
+                            var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
+                            var suscripcionesActivas = suscripciones.Where(s =>
+                                s.PerfilId.HasValue &&
+                                s.PerfilId.Value == viewModel.Id &&
+                                s.Estado == "activa").ToList();
+
+                            if (suscripcionesActivas.Any())
+                            {
+                                LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                                MessageBox.Show(
+                                    $"⚠️ No se puede cambiar el estado a 'disponible'\n\n" +
+                                    $"Este perfil tiene {suscripcionesActivas.Count} suscripción(es) activa(s).\n\n" +
+                                    "Acción requerida:\n" +
+                                    "1. Cancela las suscripciones activas primero\n" +
+                                    "2. Luego podrás cambiar el estado a disponible",
+                                    "Estado no permitido",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Warning);
+                                return;
+                            }
+                        }
+
+                        // Si pasa validaciones, actualizar
+                        await _supabase.ActualizarPerfilAsync(perfilActualizado);
 
                         MessageBox.Show(
                             "Perfil actualizado exitosamente",
@@ -216,7 +285,7 @@ namespace StreamManager.Views.Pages
                     catch (Exception ex)
                     {
                         MessageBox.Show(
-                            $"Error al actualizar perfil: {ex.Message}",
+                            $"Error al actualizar perfil:\n\n{ex.Message}",
                             "Error",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
@@ -229,37 +298,16 @@ namespace StreamManager.Views.Pages
             }
         }
 
-        private void CopiarPinButton_Click(object sender, RoutedEventArgs e)
+        private void VerButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is PerfilViewModel viewModel)
             {
-                if (viewModel.Pin == "Sin PIN")
+                var dialog = new PerfilDetalleDialog(viewModel)
                 {
-                    MessageBox.Show(
-                        "Este perfil no tiene PIN",
-                        "Información",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                    return;
-                }
+                    Owner = Window.GetWindow(this)
+                };
 
-                try
-                {
-                    Clipboard.SetText(viewModel.Pin);
-                    MessageBox.Show(
-                        "PIN copiado al portapapeles",
-                        "Éxito",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(
-                        $"Error al copiar: {ex.Message}",
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                }
+                dialog.ShowDialog();
             }
         }
 
@@ -267,20 +315,61 @@ namespace StreamManager.Views.Pages
         {
             if (sender is Button button && button.Tag is PerfilViewModel viewModel)
             {
-                var confirmDialog = new ConfirmDialog(
-                    $"¿Estás seguro de eliminar el perfil '{viewModel.Nombre}'?\n\n" +
-                    $"• Plataforma: {viewModel.PlataformaNombre}\n" +
-                    $"• Estado: {viewModel.Estado}\n\n" +
-                    "Esta acción NO se puede deshacer.",
-                    "Eliminar Perfil",
-                    "Delete")
+                try
                 {
-                    Owner = Window.GetWindow(this)
-                };
+                    LoadingOverlay.Visibility = Visibility.Visible;
 
-                if (confirmDialog.ShowDialog() == true)
-                {
-                    try
+                    // Validar si tiene suscripciones activas
+                    var suscripciones = await _supabase.ObtenerSuscripcionesAsync();
+                    var suscripcionesActivas = suscripciones.Where(s =>
+                        s.PerfilId.HasValue &&
+                        s.PerfilId.Value == viewModel.Id &&
+                        s.Estado == "activa").ToList();
+
+                    if (suscripcionesActivas.Any())
+                    {
+                        LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                        var clientes = await _supabase.ObtenerClientesAsync();
+                        var nombresClientes = suscripcionesActivas
+                            .Select(s => clientes.FirstOrDefault(c => c.Id == s.ClienteId)?.NombreCompleto ?? "Desconocido")
+                            .Take(3)
+                            .ToList();
+
+                        var listaClientes = string.Join("\n• ", nombresClientes);
+                        var masClientes = suscripcionesActivas.Count > 3 ? $"\n• ... y {suscripcionesActivas.Count - 3} más" : "";
+
+                        var mensaje = $"⚠️ No se puede eliminar el perfil '{viewModel.Nombre}'\n\n" +
+                                    $"Este perfil tiene {suscripcionesActivas.Count} suscripción(es) activa(s):\n\n" +
+                                    $"• {listaClientes}{masClientes}\n\n" +
+                                    "Acción requerida:\n" +
+                                    "1. Cancela o finaliza todas las suscripciones activas\n" +
+                                    "2. Luego podrás eliminar el perfil";
+
+                        MessageBox.Show(
+                            mensaje,
+                            "No se puede eliminar - Suscripciones activas",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                    // Si pasa validaciones, mostrar confirmación
+                    var confirmDialog = new ConfirmDialog(
+                        $"¿Estás seguro de eliminar el perfil '{viewModel.Nombre}'?\n\n" +
+                        $"• Plataforma: {viewModel.PlataformaNombre}\n" +
+                        $"• Estado: {viewModel.Estado}\n" +
+                        $"• PIN: {viewModel.Pin}\n\n" +
+                        "Esta acción NO se puede deshacer.",
+                        "Eliminar Perfil",
+                        "Delete")
+                    {
+                        Owner = Window.GetWindow(this)
+                    };
+
+                    if (confirmDialog.ShowDialog() == true)
                     {
                         LoadingOverlay.Visibility = Visibility.Visible;
 
@@ -294,18 +383,18 @@ namespace StreamManager.Views.Pages
 
                         await CargarPerfilesAsync();
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(
-                            $"Error al eliminar perfil: {ex.Message}",
-                            "Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                    finally
-                    {
-                        LoadingOverlay.Visibility = Visibility.Collapsed;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Error al eliminar perfil:\n\n{ex.Message}",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+                finally
+                {
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
                 }
             }
         }

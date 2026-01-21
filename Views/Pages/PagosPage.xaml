@@ -4,8 +4,11 @@
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       Title="Historial de Pagos">
 
-    <Grid Margin="24">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                  HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="24">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -136,63 +139,168 @@
             </materialDesign:Card>
         </Grid>
 
-        <!-- Filtros y búsqueda -->
-        <Grid Grid.Row="2" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Búsqueda -->
-            <TextBox x:Name="BusquedaTextBox"
-                    Grid.Column="0"
-                    materialDesign:HintAssist.Hint="Buscar por cliente, referencia o monto..."
-                    Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                    TextChanged="BusquedaTextBox_TextChanged"
-                    Margin="0,0,12,0"/>
-
-            <!-- Filtros -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <ComboBox x:Name="MetodoFiltroComboBox"
-                         materialDesign:HintAssist.Hint="Método de Pago"
-                         Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                         Width="150"
-                         Margin="0,0,8,0"
-                         SelectionChanged="FiltroComboBox_SelectionChanged">
-                    <ComboBoxItem Content="Todos" Tag="todos" IsSelected="True"/>
-                    <ComboBoxItem Content="Efectivo" Tag="efectivo"/>
-                    <ComboBoxItem Content="Transferencia" Tag="transferencia"/>
-                    <ComboBoxItem Content="Depósito" Tag="deposito"/>
-                    <ComboBoxItem Content="Otro" Tag="otro"/>
-                </ComboBox>
-
-                <DatePicker x:Name="FechaInicioDatePicker"
-                           materialDesign:HintAssist.Hint="Desde"
-                           Style="{StaticResource MaterialDesignOutlinedDatePicker}"
-                           Width="140"
-                           Margin="0,0,8,0"
-                           SelectedDateChanged="FiltroComboBox_SelectionChanged"/>
-
-                <DatePicker x:Name="FechaFinDatePicker"
-                           materialDesign:HintAssist.Hint="Hasta"
-                           Style="{StaticResource MaterialDesignOutlinedDatePicker}"
-                           Width="140"
-                           Margin="0,0,8,0"
-                           SelectedDateChanged="FiltroComboBox_SelectionChanged"/>
-
-                <Button x:Name="RefrescarButton"
-                       Style="{StaticResource MaterialDesignRaisedButton}"
-                       Click="RefrescarButton_Click"
-                       ToolTip="Refrescar">
+        <!-- Botones de acción -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    Margin="0,0,0,16">
+            <Button x:Name="RefrescarButton"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="RefrescarButton_Click"
+                    Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Refresh" 
-                                            Width="20" 
-                                            Height="20"/>
-                </Button>
-            </StackPanel>
-        </Grid>
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="REFRESCAR" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="LimpiarFiltrosButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="LimpiarFiltrosButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FilterRemove" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="LIMPIAR FILTROS" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Panel de Filtros Avanzados -->
+        <materialDesign:Card Grid.Row="3"
+                             Padding="16"
+                             Margin="0,0,0,16"
+                             materialDesign:ElevationAssist.Elevation="Dp1">
+            <Expander x:Name="FiltrosExpander"
+                     Header="Filtros Avanzados"
+                     IsExpanded="True">
+                <Grid Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Fila 1 -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Búsqueda general -->
+                        <TextBox x:Name="BusquedaTextBox"
+                                Grid.Column="0"
+                                materialDesign:HintAssist.Hint="🔍 Buscar (cliente, ref, teléfono)"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Margin="0,0,8,0"
+                                TextChanged="BusquedaTextBox_TextChanged"/>
+
+                        <!-- Filtro por cliente -->
+                        <ComboBox x:Name="ClienteFiltroComboBox"
+                                 Grid.Column="1"
+                                 materialDesign:HintAssist.Hint="👤 Cliente"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 DisplayMemberPath="NombreCompleto"
+                                 Margin="0,0,8,0"
+                                 SelectionChanged="FiltroComboBox_SelectionChanged"/>
+
+                        <!-- Filtro por plataforma -->
+                        <ComboBox x:Name="PlataformaFiltroComboBox"
+                                 Grid.Column="2"
+                                 materialDesign:HintAssist.Hint="📺 Plataforma"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 DisplayMemberPath="Nombre"
+                                 Margin="0,0,8,0"
+                                 SelectionChanged="FiltroComboBox_SelectionChanged"/>
+
+                        <!-- Filtro por método -->
+                        <ComboBox x:Name="MetodoFiltroComboBox"
+                                 Grid.Column="3"
+                                 materialDesign:HintAssist.Hint="💳 Método"
+                                 Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                 SelectionChanged="FiltroComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Todos" Tag="todos" IsSelected="True"/>
+                            <ComboBoxItem Content="💵 Efectivo" Tag="efectivo"/>
+                            <ComboBoxItem Content="🏦 Transferencia" Tag="transferencia"/>
+                            <ComboBoxItem Content="🏧 Depósito" Tag="deposito"/>
+                            <ComboBoxItem Content="📝 Otro" Tag="otro"/>
+                        </ComboBox>
+                    </Grid>
+
+                    <!-- Fila 2 -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Fecha DESDE -->
+                        <DatePicker x:Name="FechaInicioDatePicker"
+                                   Grid.Column="0"
+                                   materialDesign:HintAssist.Hint="📅 Desde"
+                                   Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                   Margin="0,0,8,0"
+                                   SelectedDateChanged="FiltroComboBox_SelectionChanged"/>
+
+                        <!-- Fecha HASTA -->
+                        <DatePicker x:Name="FechaFinDatePicker"
+                                   Grid.Column="1"
+                                   materialDesign:HintAssist.Hint="📅 Hasta"
+                                   Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                   Margin="0,0,8,0"
+                                   SelectedDateChanged="FiltroComboBox_SelectionChanged"/>
+
+                        <!-- Monto DESDE -->
+                        <TextBox x:Name="MontoDesdeTextBox"
+                                Grid.Column="2"
+                                materialDesign:HintAssist.Hint="💰 Monto desde"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Margin="0,0,8,0"
+                                TextChanged="MontoTextBox_TextChanged"
+                                PreviewTextInput="MontoTextBox_PreviewTextInput"/>
+
+                        <!-- Monto HASTA -->
+                        <TextBox x:Name="MontoHastaTextBox"
+                                Grid.Column="3"
+                                materialDesign:HintAssist.Hint="💰 Monto hasta"
+                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Margin="0,0,8,0"
+                                TextChanged="MontoTextBox_TextChanged"
+                                PreviewTextInput="MontoTextBox_PreviewTextInput"/>
+
+                        <!-- Contador de resultados -->
+                        <Border Grid.Column="4"
+                               Background="#E3F2FD"
+                               CornerRadius="4"
+                               Padding="12,8">
+                            <StackPanel Orientation="Horizontal" 
+                                       HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="FilterCheck" 
+                                                        VerticalAlignment="Center"
+                                                        Foreground="#1976D2"/>
+                                <TextBlock x:Name="ResultadosTextBlock"
+                                          Text="0 resultados"
+                                          VerticalAlignment="Center"
+                                          Margin="8,0,0,0"
+                                          FontWeight="SemiBold"
+                                          Foreground="#1976D2"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Expander>
+        </materialDesign:Card>
 
         <!-- DataGrid de Pagos -->
-        <materialDesign:Card Grid.Row="3"
+        <materialDesign:Card Grid.Row="4"
                              Padding="0"
                              materialDesign:ElevationAssist.Elevation="Dp2">
             <Grid>
@@ -202,6 +310,11 @@
                          CanUserDeleteRows="False"
                          IsReadOnly="True"
                          SelectionMode="Single"
+                         EnableRowVirtualization="True"
+                         MinHeight="400"
+                         MaxHeight="600"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
                          materialDesign:DataGridAssist.CellPadding="8"
                          materialDesign:DataGridAssist.ColumnHeaderPadding="8">
                     <DataGrid.Columns>
@@ -209,12 +322,17 @@
                         <DataGridTextColumn Header="Fecha" 
                                            Binding="{Binding FechaPagoTexto}" 
                                            Width="140"/>
-                        
+
                         <!-- Cliente -->
                         <DataGridTextColumn Header="Cliente" 
                                            Binding="{Binding ClienteNombre}" 
                                            Width="*"/>
-                        
+
+                        <!-- Teléfono -->
+                        <DataGridTextColumn Header="Teléfono" 
+                                           Binding="{Binding ClienteTelefono}" 
+                                           Width="120"/>
+
                         <!-- Plataforma -->
                         <DataGridTemplateColumn Header="Plataforma" Width="140">
                             <DataGridTemplateColumn.CellTemplate>
@@ -308,4 +426,5 @@
             </Grid>
         </materialDesign:Card>
     </Grid>
+    </ScrollViewer>
 </Page>

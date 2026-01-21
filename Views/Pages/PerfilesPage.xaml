@@ -166,25 +166,6 @@
                                           Binding="{Binding CuentaNombre}"
                                           Width="*"/>
 
-                        <!-- PIN -->
-                        <DataGridTemplateColumn Header="PIN" Width="120">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Pin}" 
-                                                  VerticalAlignment="Center"
-                                                  Margin="0,0,8,0"/>
-                                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                               ToolTip="Copiar PIN"
-                                               Click="CopiarPinButton_Click"
-                                               Tag="{Binding}">
-                                            <materialDesign:PackIcon Kind="ContentCopy" Width="16" Height="16"/>
-                                        </Button>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
                         <!-- Estado -->
                         <DataGridTemplateColumn Header="Estado" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
@@ -202,11 +183,17 @@
                         </DataGridTemplateColumn>
 
                         <!-- Acciones -->
-                        <DataGridTemplateColumn Header="Acciones" Width="140">
+                        <DataGridTemplateColumn Header="Acciones" Width="180">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" 
                                                HorizontalAlignment="Center">
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                               ToolTip="Ver detalles"
+                                               Click="VerButton_Click"
+                                               Tag="{Binding}">
+                                            <materialDesign:PackIcon Kind="Eye"/>
+                                        </Button>
                                         <Button Style="{StaticResource MaterialDesignIconButton}"
                                                ToolTip="Editar"
                                                Click="EditarButton_Click"

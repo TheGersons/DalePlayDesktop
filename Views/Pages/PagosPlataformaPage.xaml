@@ -9,6 +9,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -136,97 +137,176 @@
             </materialDesign:Card>
         </Grid>
 
-        <!-- Botones de acción y filtros -->
-        <Grid Grid.Row="2" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- Botones de acción -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    Margin="0,0,0,16">
+            <Button x:Name="NuevoPagoButton"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Click="NuevoPagoButton_Click"
+                    Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Plus" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="NUEVO PAGO" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
 
-            <!-- Botones de acción -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <Button x:Name="NuevoPagoButton"
-                       Style="{StaticResource MaterialDesignRaisedButton}"
-                       Click="NuevoPagoButton_Click"
-                       Margin="0,0,8,0">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Plus" 
-                                                VerticalAlignment="Center"
-                                                Width="18"
-                                                Height="18"/>
-                        <TextBlock Text="NUEVO PAGO" 
-                                  Margin="8,0,0,0"
-                                  VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+            <Button x:Name="RefrescarButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="RefrescarButton_Click"
+                    Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Refresh" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="REFRESCAR" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
 
-                <Button x:Name="RefrescarButton"
-                       Style="{StaticResource MaterialDesignOutlinedButton}"
-                       Click="RefrescarButton_Click">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Refresh" 
-                                                VerticalAlignment="Center"
-                                                Width="18"
-                                                Height="18"/>
-                        <TextBlock Text="REFRESCAR" 
-                                  Margin="8,0,0,0"
-                                  VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
+            <Button x:Name="LimpiarFiltrosButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="LimpiarFiltrosButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FilterRemove" 
+                                            VerticalAlignment="Center"/>
+                    <TextBlock Text="LIMPIAR FILTROS" 
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
 
-            <!-- Filtro de estado -->
-            <ComboBox x:Name="EstadoFiltroComboBox"
-                     Grid.Column="2"
-                     materialDesign:HintAssist.Hint="Estado"
-                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                     Width="150"
-                     SelectionChanged="EstadoFiltroComboBox_SelectionChanged">
-                <ComboBoxItem Content="Todos" Tag="todos" IsSelected="True"/>
-                <ComboBoxItem Content="Vencidos" Tag="vencido"/>
-                <ComboBoxItem Content="Por Pagar" Tag="por_pagar"/>
-                <ComboBoxItem Content="Al Día" Tag="al_dia"/>
-            </ComboBox>
-        </Grid>
-
-        <!-- Lista de Pagos a Plataformas -->
+        <!-- Panel de Filtros Avanzados -->
         <materialDesign:Card Grid.Row="3"
-                             Padding="0"
-                             materialDesign:ElevationAssist.Elevation="Dp2">
+                             Padding="16"
+                             Margin="0,0,0,16"
+                             materialDesign:ElevationAssist.Elevation="Dp1">
+            <Expander x:Name="FiltrosExpander"
+                     Header="Filtros Avanzados"
+                     IsExpanded="True">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Búsqueda general -->
+                    <TextBox x:Name="BusquedaTextBox"
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="🔍 Buscar"
+                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Margin="0,0,8,0"
+                            TextChanged="BusquedaTextBox_TextChanged"/>
+
+                    <!-- Filtro por plataforma -->
+                    <ComboBox x:Name="PlataformaFiltroComboBox"
+                             Grid.Column="1"
+                             materialDesign:HintAssist.Hint="📺 Plataforma"
+                             Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                             DisplayMemberPath="Nombre"
+                             Margin="0,0,8,0"
+                             SelectionChanged="FiltroComboBox_SelectionChanged"/>
+
+                    <!-- Filtro por estado -->
+                    <ComboBox x:Name="EstadoFiltroComboBox"
+                             Grid.Column="2"
+                             materialDesign:HintAssist.Hint="📊 Estado"
+                             Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                             Margin="0,0,8,0"
+                             SelectionChanged="EstadoFiltroComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Todos" Tag="todos" IsSelected="True"/>
+                        <ComboBoxItem Content="🔴 Vencidos" Tag="vencido"/>
+                        <ComboBoxItem Content="⏰ Por Pagar" Tag="por_pagar"/>
+                        <ComboBoxItem Content="✅ Al Día" Tag="al_dia"/>
+                    </ComboBox>
+
+                    <!-- Filtro fecha DESDE -->
+                    <DatePicker x:Name="FechaDesdeFilterPicker"
+                               Grid.Column="3"
+                               materialDesign:HintAssist.Hint="📅 Desde"
+                               Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                               Margin="0,0,8,0"
+                               SelectedDateChanged="FechaFiltro_SelectedDateChanged"/>
+
+                    <!-- Filtro fecha HASTA -->
+                    <DatePicker x:Name="FechaHastaFilterPicker"
+                               Grid.Column="4"
+                               materialDesign:HintAssist.Hint="📅 Hasta"
+                               Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                               Margin="0,0,8,0"
+                               SelectedDateChanged="FechaFiltro_SelectedDateChanged"/>
+
+                    <!-- Contador de resultados -->
+                    <Border Grid.Column="5"
+                           Background="#E3F2FD"
+                           CornerRadius="4"
+                           Padding="12,8">
+                        <StackPanel Orientation="Horizontal" 
+                                   HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="FilterCheck" 
+                                                    VerticalAlignment="Center"
+                                                    Foreground="#1976D2"/>
+                            <TextBlock x:Name="ResultadosTextBlock"
+                                      Text="0 resultados"
+                                      VerticalAlignment="Center"
+                                      Margin="8,0,0,0"
+                                      FontWeight="SemiBold"
+                                      Foreground="#1976D2"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Expander>
+        </materialDesign:Card>
+
+        <!-- Lista de Pagos -->
+        <materialDesign:Card Grid.Row="4" Padding="0" materialDesign:ElevationAssist.Elevation="Dp2">
             <Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl x:Name="PagosPlataformaItemsControl">
+                    <ItemsControl x:Name="PagosPlataformaItemsControl" Padding="16">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border BorderBrush="#E0E0E0"
-                                       BorderThickness="0,0,0,1"
-                                       Background="{Binding EstadoBackground}"
-                                       Padding="24">
+                                <Border Background="{Binding EstadoBackground}"
+                                       BorderBrush="#E0E0E0"
+                                       BorderThickness="1"
+                                       CornerRadius="8"
+                                       Padding="20"
+                                       Margin="0,0,0,12"
+                                       materialDesign:ElevationAssist.Elevation="Dp1">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="60"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Icono de Plataforma -->
+                                        <!-- Icono -->
                                         <Border Grid.Column="0"
-                                               Width="56"
-                                               Height="56"
-                                               CornerRadius="28"
+                                               Width="50"
+                                               Height="50"
                                                Background="{Binding PlataformaColor}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,20,0">
-                                            <Image Source="{Binding PlataformaIcono, Converter={StaticResource ImagePathConverter}}"
-                                                   Width="32"
-                                                   Height="32"
-                                                   Stretch="Uniform"/>
+                                               CornerRadius="25"
+                                               VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="{Binding PlataformaIcono}"
+                                                                    Width="28"
+                                                                    Height="28"
+                                                                    Foreground="White"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"/>
                                         </Border>
 
-                                        <!-- Información -->
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <!-- Info -->
+                                        <StackPanel Grid.Column="1" 
+                                                   VerticalAlignment="Center"
+                                                   Margin="16,0,0,0">
                                             <TextBlock Text="{Binding PlataformaNombre}"
                                                       FontSize="18"
                                                       FontWeight="Bold"

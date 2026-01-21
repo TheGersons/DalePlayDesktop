@@ -258,23 +258,62 @@ namespace StreamManager.Views.Pages
                     {
                         LoadingOverlay.Visibility = Visibility.Visible;
 
-                        await _supabase.ActualizarSuscripcionAsync(dialog.Suscripcion);
+                        var suscripcionActualizada = dialog.Suscripcion;
+                        var suscripcionOriginal = viewModel.Suscripcion;
 
-                        MessageBox.Show(
-                            "Suscripción actualizada exitosamente",
-                            "Éxito",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
+                        // Validación 1: Cambio de perfil
+                        if (suscripcionOriginal.PerfilId != suscripcionActualizada.PerfilId)
+                        {
+                            var perfiles = await _supabase.ObtenerPerfilesAsync();
+                            var perfilOriginal = perfiles.FirstOrDefault(p => p.Id == suscripcionOriginal.PerfilId);
+                            var perfilNuevo = perfiles.FirstOrDefault(p => p.Id == suscripcionActualizada.PerfilId);
+
+                            LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                            var resultado = MessageBox.Show(
+                                $"⚠️ ADVERTENCIA: Cambio de perfil detectado\n\n" +
+                                $"De: {perfilOriginal?.NombrePerfil ?? "Desconocido"}\n" +
+                                $"A: {perfilNuevo?.NombrePerfil ?? "Desconocido"}\n\n" +
+                                "Las credenciales de acceso cambiarán para el cliente.\n" +
+                                "El perfil anterior quedará disponible.\n\n" +
+                                "¿Deseas continuar?",
+                                "Confirmación", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                            if (resultado == MessageBoxResult.No)
+                                return;
+
+                            LoadingOverlay.Visibility = Visibility.Visible;
+                        }
+
+                        // Validación 2: Cambio de estado a cancelada
+                        if (suscripcionOriginal.Estado != "cancelada" && suscripcionActualizada.Estado == "cancelada")
+                        {
+                            LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                            var resultado = MessageBox.Show(
+                                $"⚠️ Vas a cancelar la suscripción de {viewModel.ClienteNombre}\n\n" +
+                                "El perfil quedará disponible.\n" +
+                                "El cliente perderá acceso al servicio.\n\n" +
+                                "¿Confirmas la cancelación?",
+                                "Confirmación", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                            if (resultado == MessageBoxResult.No)
+                                return;
+
+                            LoadingOverlay.Visibility = Visibility.Visible;
+                        }
+
+                        await _supabase.ActualizarSuscripcionAsync(suscripcionActualizada);
+
+                        MessageBox.Show("Suscripción actualizada exitosamente", "Éxito",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
 
                         await CargarSuscripcionesAsync();
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(
-                            $"Error al actualizar suscripción: {ex.Message}",
-                            "Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
+                        MessageBox.Show($"Error al actualizar suscripción:\n\n{ex.Message}",
+                            "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                     finally
                     {
@@ -301,71 +340,146 @@ namespace StreamManager.Views.Pages
         {
             if (sender is Button button && button.Tag is SuscripcionViewModel viewModel)
             {
-                var confirmDialog = new ConfirmDialog(
-                    $"¿Renovar la suscripción de {viewModel.ClienteNombre}?\n\n" +
-                    $"• Perfil: {viewModel.PerfilNombre}\n" +
-                    $"• Costo: L {viewModel.CostoMensual:N2}\n\n" +
-                    "Se extenderá el próximo pago por 30 días.",
-                    "Renovar Suscripción",
-                    "Info")
+                try
                 {
-                    Owner = Window.GetWindow(this)
-                };
+                    LoadingOverlay.Visibility = Visibility.Visible;
 
-                if (confirmDialog.ShowDialog() == true)
-                {
-                    try
+                    var suscripcion = viewModel.Suscripcion;
+                    var estadoOriginal = suscripcion.Estado;
+
+                    // Si está cancelada, reactivar perfil
+                    if (estadoOriginal == "cancelada")
+                    {
+                        var perfiles = await _supabase.ObtenerPerfilesAsync();
+                        var perfil = perfiles.FirstOrDefault(p => p.Id == suscripcion.PerfilId);
+
+                        if (perfil != null && perfil.Estado == "ocupado")
+                        {
+                            LoadingOverlay.Visibility = Visibility.Collapsed;
+                            MessageBox.Show(
+                                $"⚠️ No se puede renovar la suscripción\n\n" +
+                                $"El perfil '{viewModel.PerfilNombre}' está ocupado por otro cliente.\n\n" +
+                                "Acción requerida:\n" +
+                                "1. Libera el perfil\n" +
+                                "2. Luego podrás renovar esta suscripción",
+                                "Perfil ocupado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                    string mensaje;
+                    if (estadoOriginal == "cancelada")
+                    {
+                        mensaje = $"¿Reactivar suscripción de {viewModel.ClienteNombre}?\n\n" +
+                                $"• Perfil: {viewModel.PerfilNombre}\n" +
+                                $"• Plataforma: {viewModel.PlataformaNombre}\n" +
+                                $"• Costo: L {viewModel.CostoMensual:N2}\n\n" +
+                                "La suscripción se reactivará y se agregará 1 mes.\n" +
+                                "El perfil quedará ocupado nuevamente.";
+                    }
+                    else
+                    {
+                        mensaje = $"¿Renovar suscripción de {viewModel.ClienteNombre}?\n\n" +
+                                $"• Perfil: {viewModel.PerfilNombre}\n" +
+                                $"• Costo: L {viewModel.CostoMensual:N2}\n" +
+                                $"• Próximo pago: {suscripcion.FechaProximoPago:dd/MM/yyyy}\n\n" +
+                                "Se agregará 1 mes al próximo pago (pago adelantado).";
+                    }
+
+                    var confirmDialog = new ConfirmDialog(mensaje, "Renovar Suscripción", "Info")
+                    {
+                        Owner = Window.GetWindow(this)
+                    };
+
+                    if (confirmDialog.ShowDialog() == true)
                     {
                         LoadingOverlay.Visibility = Visibility.Visible;
 
-                        var suscripcion = viewModel.Suscripcion;
-                        suscripcion.FechaProximoPago = suscripcion.FechaProximoPago.AddMonths(1);
+                        // Sumar 30 días al próximo pago
+                        var fechaTemp = suscripcion.FechaProximoPago.ToDateTime(TimeOnly.MinValue);
+                        suscripcion.FechaProximoPago = DateOnly.FromDateTime(fechaTemp.AddDays(30));
+                        suscripcion.FechaLimitePago = DateOnly.FromDateTime(fechaTemp.AddDays(35)); // +30 días + 5 de gracia
                         suscripcion.Estado = "activa";
 
                         await _supabase.ActualizarSuscripcionAsync(suscripcion);
 
+                        // Si estaba cancelada, ocupar el perfil
+                        if (estadoOriginal == "cancelada")
+                        {
+                            var perfiles = await _supabase.ObtenerPerfilesAsync();
+                            var perfil = perfiles.FirstOrDefault(p => p.Id == suscripcion.PerfilId);
+                            if (perfil != null)
+                            {
+                                perfil.Estado = "ocupado";
+                                await _supabase.ActualizarPerfilAsync(perfil);
+                            }
+                        }
+
                         MessageBox.Show(
-                            "Suscripción renovada exitosamente",
-                            "Éxito",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
+                            estadoOriginal == "cancelada"
+                                ? "Suscripción reactivada y renovada exitosamente"
+                                : "Suscripción renovada exitosamente (pago adelantado)",
+                            "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
 
                         await CargarSuscripcionesAsync();
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(
-                            $"Error al renovar suscripción: {ex.Message}",
-                            "Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                    finally
-                    {
-                        LoadingOverlay.Visibility = Visibility.Collapsed;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error al renovar suscripción:\n\n{ex.Message}",
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
                 }
             }
         }
+
 
         private async void CancelarButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is SuscripcionViewModel viewModel)
             {
-                var confirmDialog = new ConfirmDialog(
-                    $"¿Cancelar la suscripción de {viewModel.ClienteNombre}?\n\n" +
-                    $"• Perfil: {viewModel.PerfilNombre}\n" +
-                    $"• Plataforma: {viewModel.PlataformaNombre}\n\n" +
-                    "El perfil quedará disponible para otro cliente.",
-                    "Cancelar Suscripción",
-                    "Warning")
+                try
                 {
-                    Owner = Window.GetWindow(this)
-                };
+                    LoadingOverlay.Visibility = Visibility.Visible;
 
-                if (confirmDialog.ShowDialog() == true)
-                {
-                    try
+                    // Verificar pagos pendientes
+                    var pagos = await _supabase.ObtenerPagosAsync();
+                    var pagosPendientes = pagos.Where(p =>
+                        p.SuscripcionId == viewModel.Id).ToList();
+
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
+
+                    string mensaje;
+                    if (pagosPendientes.Any())
+                    {
+                        var totalPendiente = pagosPendientes.Sum(p => p.Monto);
+                        mensaje = $"⚠️ Cancelar suscripción de {viewModel.ClienteNombre}?\n\n" +
+                                $"• Perfil: {viewModel.PerfilNombre}\n" +
+                                $"• Plataforma: {viewModel.PlataformaNombre}\n" +
+                                $"• Pagos pendientes: {pagosPendientes.Count} (L {totalPendiente:N2})\n\n" +
+                                "El perfil quedará disponible.\n" +
+                                "Los pagos pendientes seguirán registrados.\n\n" +
+                                "¿Confirmas la cancelación?";
+                    }
+                    else
+                    {
+                        mensaje = $"¿Cancelar la suscripción de {viewModel.ClienteNombre}?\n\n" +
+                                $"• Perfil: {viewModel.PerfilNombre}\n" +
+                                $"• Plataforma: {viewModel.PlataformaNombre}\n\n" +
+                                "El perfil quedará disponible para otro cliente.";
+                    }
+
+                    var confirmDialog = new ConfirmDialog(mensaje, "Cancelar Suscripción", "Warning")
+                    {
+                        Owner = Window.GetWindow(this)
+                    };
+
+                    if (confirmDialog.ShowDialog() == true)
                     {
                         LoadingOverlay.Visibility = Visibility.Visible;
 
@@ -374,29 +488,35 @@ namespace StreamManager.Views.Pages
 
                         await _supabase.ActualizarSuscripcionAsync(suscripcion);
 
-                        MessageBox.Show(
-                            "Suscripción cancelada exitosamente",
-                            "Éxito",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
+                        // Liberar perfil
+                        var perfiles = await _supabase.ObtenerPerfilesAsync();
+                        var perfil = perfiles.FirstOrDefault(p => p.Id == suscripcion.PerfilId);
+                        if (perfil != null)
+                        {
+                            perfil.Estado = "disponible";
+                            await _supabase.ActualizarPerfilAsync(perfil);
+                        }
+
+                        MessageBox.Show("Suscripción cancelada exitosamente", "Éxito",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
 
                         await CargarSuscripcionesAsync();
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(
-                            $"Error al cancelar suscripción: {ex.Message}",
-                            "Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                    finally
-                    {
-                        LoadingOverlay.Visibility = Visibility.Collapsed;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error al cancelar suscripción:\n\n{ex.Message}",
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
                 }
             }
         }
+
+
+
 
         private async void RefrescarButton_Click(object sender, RoutedEventArgs e)
         {

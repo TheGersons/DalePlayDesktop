@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using StreamManager.Data.Models;
 using StreamManager.Services;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace StreamManager.Views.Pages
@@ -11,6 +13,8 @@ namespace StreamManager.Views.Pages
     {
         private readonly SupabaseService _supabase;
         private List<Pago> _todosPagos = new();
+        private List<Cliente> _todosClientes = new();
+        private List<Plataforma> _todasPlataformas = new();
 
         public PagosPage()
         {
@@ -40,8 +44,13 @@ namespace StreamManager.Views.Pages
                 // Obtener todos los pagos
                 _todosPagos = await _supabase.ObtenerPagosAsync();
 
+                // Cargar clientes y plataformas para filtros
+                _todosClientes = await _supabase.ObtenerClientesAsync();
+                _todasPlataformas = await _supabase.ObtenerPlataformasAsync();
+                CargarFiltros();
+
                 // Aplicar filtros
-                AplicarFiltros();
+                await AplicarFiltrosAsync();
 
                 // Actualizar cards de resumen
                 await ActualizarResumenAsync();
@@ -60,6 +69,21 @@ namespace StreamManager.Views.Pages
             }
         }
 
+        private void CargarFiltros()
+        {
+            // Cargar clientes
+            var clientesParaFiltro = new List<Cliente> { new Cliente { Id = Guid.Empty, NombreCompleto = "Todos los clientes" } };
+            clientesParaFiltro.AddRange(_todosClientes.OrderBy(c => c.NombreCompleto));
+            ClienteFiltroComboBox.ItemsSource = clientesParaFiltro;
+            ClienteFiltroComboBox.SelectedIndex = 0;
+
+            // Cargar plataformas
+            var plataformasParaFiltro = new List<Plataforma> { new Plataforma { Id = Guid.Empty, Nombre = "Todas las plataformas" } };
+            plataformasParaFiltro.AddRange(_todasPlataformas.Where(p => p.Estado == "activa").OrderBy(p => p.Nombre));
+            PlataformaFiltroComboBox.ItemsSource = plataformasParaFiltro;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
+        }
+
         private async Task ActualizarResumenAsync()
         {
             try
@@ -67,19 +91,19 @@ namespace StreamManager.Views.Pages
                 var fechaInicio = FechaInicioDatePicker.SelectedDate ?? DateTime.Today.AddMonths(-1);
                 var fechaFin = FechaFinDatePicker.SelectedDate ?? DateTime.Today;
 
-                var pagosPeriodo = _todosPagos.Where(p => 
-                    p.FechaPago >= fechaInicio && 
+                var pagosPeriodo = _todosPagos.Where(p =>
+                    p.FechaPago >= fechaInicio &&
                     p.FechaPago <= fechaFin.AddDays(1).AddTicks(-1)).ToList();
 
                 // Total recaudado
                 var totalRecaudado = pagosPeriodo.Sum(p => p.Monto);
                 TotalRecaudadoTextBlock.Text = $"L {totalRecaudado:N2}";
-                PeriodoRecaudadoTextBlock.Text = fechaInicio.Month == DateTime.Now.Month ? 
+                PeriodoRecaudadoTextBlock.Text = fechaInicio.Month == DateTime.Now.Month ?
                     "Este mes" : $"{fechaInicio:MMM yyyy}";
 
                 // Total pagos
                 TotalPagosTextBlock.Text = pagosPeriodo.Count.ToString();
-                PeriodoPagosTextBlock.Text = fechaInicio.Month == DateTime.Now.Month ? 
+                PeriodoPagosTextBlock.Text = fechaInicio.Month == DateTime.Now.Month ?
                     "Este mes" : $"{fechaInicio:MMM yyyy}";
 
                 // Promedio
@@ -105,14 +129,24 @@ namespace StreamManager.Views.Pages
             }
         }
 
-        private async void AplicarFiltros()
+        private async Task AplicarFiltrosAsync()
         {
             try
             {
+                var textoBusqueda = BusquedaTextBox.Text?.ToLower() ?? "";
+                var clienteSeleccionado = ClienteFiltroComboBox.SelectedItem as Cliente;
+                var plataformaSeleccionada = PlataformaFiltroComboBox.SelectedItem as Plataforma;
                 var metodoFiltro = (MetodoFiltroComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "todos";
                 var fechaInicio = FechaInicioDatePicker.SelectedDate ?? DateTime.MinValue;
                 var fechaFin = FechaFinDatePicker.SelectedDate ?? DateTime.MaxValue;
-                var textoBusqueda = BusquedaTextBox.Text.ToLower();
+
+                // Parsear montos
+                decimal? montoDesde = null;
+                decimal? montoHasta = null;
+                if (decimal.TryParse(MontoDesdeTextBox.Text, out decimal mDesde))
+                    montoDesde = mDesde;
+                if (decimal.TryParse(MontoHastaTextBox.Text, out decimal mHasta))
+                    montoHasta = mHasta;
 
                 var pagosFiltrados = _todosPagos.AsEnumerable();
 
@@ -123,9 +157,15 @@ namespace StreamManager.Views.Pages
                 }
 
                 // Filtrar por fechas
-                pagosFiltrados = pagosFiltrados.Where(p => 
-                    p.FechaPago >= fechaInicio && 
+                pagosFiltrados = pagosFiltrados.Where(p =>
+                    p.FechaPago >= fechaInicio &&
                     p.FechaPago <= fechaFin.AddDays(1).AddTicks(-1));
+
+                // Filtrar por rango de montos
+                if (montoDesde.HasValue)
+                    pagosFiltrados = pagosFiltrados.Where(p => p.Monto >= montoDesde.Value);
+                if (montoHasta.HasValue)
+                    pagosFiltrados = pagosFiltrados.Where(p => p.Monto <= montoHasta.Value);
 
                 // Obtener datos relacionados
                 var clientes = await _supabase.ObtenerClientesAsync();
@@ -138,28 +178,54 @@ namespace StreamManager.Views.Pages
                 {
                     var cliente = clientes.FirstOrDefault(c => c.Id == pago.ClienteId);
                     var suscripcion = suscripciones.FirstOrDefault(s => s.Id == pago.SuscripcionId);
-                    var plataforma = suscripcion != null ? 
+                    var plataforma = suscripcion != null ?
                         plataformas.FirstOrDefault(p => p.Id == suscripcion.PlataformaId) : null;
+
+                    if (cliente == null) continue;
+
+                    // Filtro por cliente específico
+                    if (clienteSeleccionado != null && clienteSeleccionado.Id != Guid.Empty)
+                    {
+                        if (cliente.NombreCompleto != clienteSeleccionado.NombreCompleto)
+                            continue;
+                    }
+
+                    // Filtro por plataforma específica
+                    if (plataformaSeleccionada != null && plataformaSeleccionada.Id != Guid.Empty)
+                    {
+                        if (plataforma == null || plataforma.Nombre != plataformaSeleccionada.Nombre)
+                            continue;
+                    }
+
+                    Brush plataformaColor = Brushes.Gray;
+                    if (plataforma != null)
+                    {
+                        try
+                        {
+                            if (!string.IsNullOrEmpty(plataforma.Color))
+                                plataformaColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString(plataforma.Color));
+                        }
+                        catch { }
+                    }
 
                     var vm = new PagoViewModel
                     {
                         Id = pago.Id,
                         FechaPagoTexto = pago.FechaPago.ToString("dd/MM/yyyy HH:mm"),
-                        ClienteNombre = cliente?.NombreCompleto ?? "Cliente desconocido",
+                        ClienteNombre = cliente.NombreCompleto,
+                        ClienteTelefono = cliente.Telefono ?? "-",
                         PlataformaNombre = plataforma?.Nombre ?? "N/A",
-                        PlataformaColor = plataforma != null ? 
-                            new SolidColorBrush((Color)ColorConverter.ConvertFromString(plataforma.Color)) : 
-                            Brushes.Gray,
+                        PlataformaColor = plataformaColor,
                         MontoTexto = $"L {pago.Monto:N2}",
                         MetodoPago = CapitalizarMetodo(pago.MetodoPago),
                         MetodoIcono = ObtenerIconoMetodo(pago.MetodoPago),
                         Referencia = string.IsNullOrEmpty(pago.Referencia) ? "-" : pago.Referencia
                     };
 
-                    // Filtrar por búsqueda
+                    // Filtrar por búsqueda general
                     if (!string.IsNullOrWhiteSpace(textoBusqueda))
                     {
-                        var textoCompleto = $"{vm.ClienteNombre} {vm.PlataformaNombre} {vm.MontoTexto} {vm.Referencia}".ToLower();
+                        var textoCompleto = $"{vm.ClienteNombre} {vm.ClienteTelefono} {vm.PlataformaNombre} {vm.MontoTexto} {vm.Referencia}".ToLower();
                         if (!textoCompleto.Contains(textoBusqueda))
                             continue;
                     }
@@ -168,6 +234,7 @@ namespace StreamManager.Views.Pages
                 }
 
                 PagosDataGrid.ItemsSource = pagosViewModel;
+                ActualizarContadorResultados(pagosViewModel.Count);
             }
             catch (Exception ex)
             {
@@ -177,6 +244,36 @@ namespace StreamManager.Views.Pages
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
+        }
+
+        private void ActualizarContadorResultados(int cantidad)
+        {
+            if (ResultadosTextBlock != null)
+            {
+                ResultadosTextBlock.Text = cantidad == 1
+                    ? "1 resultado"
+                    : $"{cantidad} resultados";
+            }
+        }
+
+        private void LimpiarFiltrosButton_Click(object sender, RoutedEventArgs e)
+        {
+            BusquedaTextBox.Text = string.Empty;
+            ClienteFiltroComboBox.SelectedIndex = 0;
+            PlataformaFiltroComboBox.SelectedIndex = 0;
+            MetodoFiltroComboBox.SelectedIndex = 0;
+            FechaInicioDatePicker.SelectedDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            FechaFinDatePicker.SelectedDate = DateTime.Today;
+            MontoDesdeTextBox.Text = string.Empty;
+            MontoHastaTextBox.Text = string.Empty;
+
+            Task.Run(async () =>
+            {
+                await Dispatcher.InvokeAsync(async () =>
+                {
+                    await AplicarFiltrosAsync();
+                });
+            });
         }
 
         private string ObtenerTextoFechaRelativa(DateTime fecha)
@@ -191,7 +288,7 @@ namespace StreamManager.Views.Pages
                 return $"Hace {(int)diferencia.TotalHours}h";
             if (diferencia.TotalDays < 7)
                 return $"Hace {(int)diferencia.TotalDays}d";
-            
+
             return fecha.ToString("dd/MM/yyyy");
         }
 
@@ -219,24 +316,39 @@ namespace StreamManager.Views.Pages
             };
         }
 
+        private void MontoTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            // Solo permite números y punto decimal
+            Regex regex = new Regex("[^0-9.]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
+
         private async void RefrescarButton_Click(object sender, RoutedEventArgs e)
         {
             await CargarPagosAsync();
         }
 
-        private void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void FiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsLoaded)
             {
-                AplicarFiltros();
+                await AplicarFiltrosAsync();
             }
         }
 
-        private void BusquedaTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private async void BusquedaTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (IsLoaded)
             {
-                AplicarFiltros();
+                await AplicarFiltrosAsync();
+            }
+        }
+
+        private async void MontoTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (IsLoaded)
+            {
+                await AplicarFiltrosAsync();
             }
         }
 
@@ -253,7 +365,7 @@ namespace StreamManager.Views.Pages
 
                     var cliente = clientes.FirstOrDefault(c => c.Id == pago.ClienteId);
                     var suscripcion = suscripciones.FirstOrDefault(s => s.Id == pago.SuscripcionId);
-                    var plataforma = suscripcion != null ? 
+                    var plataforma = suscripcion != null ?
                         plataformas.FirstOrDefault(p => p.Id == suscripcion.PlataformaId) : null;
 
                     var detalles = $"DETALLES DEL PAGO\n\n" +
@@ -285,6 +397,7 @@ namespace StreamManager.Views.Pages
             public Guid Id { get; set; }
             public string FechaPagoTexto { get; set; } = string.Empty;
             public string ClienteNombre { get; set; } = string.Empty;
+            public string ClienteTelefono { get; set; } = string.Empty;
             public string PlataformaNombre { get; set; } = string.Empty;
             public Brush PlataformaColor { get; set; } = Brushes.Gray;
             public string MontoTexto { get; set; } = string.Empty;
