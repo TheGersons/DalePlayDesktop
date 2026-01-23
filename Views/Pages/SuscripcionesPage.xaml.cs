@@ -397,10 +397,12 @@ namespace StreamManager.Views.Pages
                     {
                         LoadingOverlay.Visibility = Visibility.Visible;
 
-                        // Sumar 30 días al próximo pago
+                        // Agregar 1 mes manteniendo el mismo día
                         var fechaTemp = suscripcion.FechaProximoPago.ToDateTime(TimeOnly.MinValue);
-                        suscripcion.FechaProximoPago = DateOnly.FromDateTime(fechaTemp.AddDays(30));
-                        suscripcion.FechaLimitePago = DateOnly.FromDateTime(fechaTemp.AddDays(35)); // +30 días + 5 de gracia
+                        var nuevaFecha = fechaTemp.AddMonths(1);
+
+                        suscripcion.FechaProximoPago = DateOnly.FromDateTime(nuevaFecha);
+                        suscripcion.FechaLimitePago = suscripcion.FechaProximoPago; // Sin días de gracia
                         suscripcion.Estado = "activa";
 
                         await _supabase.ActualizarSuscripcionAsync(suscripcion);
@@ -437,8 +439,6 @@ namespace StreamManager.Views.Pages
                 }
             }
         }
-
-
         private async void CancelarButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is SuscripcionViewModel viewModel)
@@ -514,9 +514,6 @@ namespace StreamManager.Views.Pages
                 }
             }
         }
-
-
-
 
         private async void RefrescarButton_Click(object sender, RoutedEventArgs e)
         {

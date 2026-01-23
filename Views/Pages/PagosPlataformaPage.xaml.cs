@@ -433,39 +433,14 @@ namespace StreamManager.Views.Pages
                     var plataforma = plataformas.FirstOrDefault(p => p.Id == pago.PlataformaId);
                     var cuenta = cuentas.FirstOrDefault(c => c.Id == pago.CuentaId);
 
-                    var mensaje = $"HISTORIAL DE PAGOS\n\n";
-                    mensaje += $"Plataforma: {plataforma?.Nombre ?? "N/A"}\n";
-                    mensaje += $"Cuenta: {cuenta?.Email ?? "N/A"}\n";
-                    mensaje += $"Monto mensual: L {pago.MontoMensual:N2}\n";
-                    mensaje += $"Estado: {ObtenerTextoEstado(pago.Estado)}\n";
-                    mensaje += $"Próximo pago: {pago.FechaProximoPago:dd/MM/yyyy}\n\n";
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
 
-                    if (historial.Any())
+                    var dialog = new HistorialPagosPlataformaDialog(pago, plataforma!, cuenta!, historial)
                     {
-                        mensaje += $"═══════════════════════\n";
-                        mensaje += $"ÚLTIMOS PAGOS:\n";
-                        mensaje += $"═══════════════════════\n\n";
+                        Owner = Window.GetWindow(this)
+                    };
 
-                        foreach (var h in historial.OrderByDescending(h => h.FechaPago).Take(10))
-                        {
-                            mensaje += $"📅 {h.FechaPago:dd/MM/yyyy HH:mm}\n";
-                            mensaje += $"   Monto: L {h.MontoPagado:N2}\n";
-                            mensaje += $"   Método: {CapitalizarMetodo(h.MetodoPago ?? "N/A")}\n";
-                            if (!string.IsNullOrEmpty(h.Referencia))
-                                mensaje += $"   Ref: {h.Referencia}\n";
-                            mensaje += $"\n";
-                        }
-                    }
-                    else
-                    {
-                        mensaje += "No hay historial de pagos registrados.";
-                    }
-
-                    MessageBox.Show(
-                        mensaje,
-                        "Historial de Pagos",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    dialog.ShowDialog();
                 }
                 catch (Exception ex)
                 {
@@ -481,6 +456,7 @@ namespace StreamManager.Views.Pages
                 }
             }
         }
+
 
         // ViewModel para pagos a plataformas
         private class PagoPlataformaViewModel

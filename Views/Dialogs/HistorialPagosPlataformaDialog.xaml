@@ -1,0 +1,247 @@
+<Window x:Class="StreamManager.Views.Dialogs.HistorialPagosPlataformaDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Historial de Pagos"
+        Height="700"
+        Width="650"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignPaper}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <materialDesign:ColorZone Grid.Row="0"
+                                  Mode="PrimaryMid"
+                                  Padding="24,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Width="50"
+                        Height="50"
+                        CornerRadius="25"
+                        Background="White"
+                        Margin="0,0,16,0"
+                        VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="History"
+                                            Width="28"
+                                            Height="28"
+                                            Foreground="#2196F3"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock x:Name="PlataformaNombreTextBlock"
+                              Text="Plataforma"
+                              FontSize="24"
+                              FontWeight="Bold"/>
+                    <TextBlock x:Name="CuentaEmailTextBlock"
+                              Text="cuenta@email.com"
+                              FontSize="14"
+                              Opacity="0.8"
+                              Margin="0,4,0,0"/>
+                </StackPanel>
+            </Grid>
+        </materialDesign:ColorZone>
+
+        <!-- Contenido -->
+        <ScrollViewer Grid.Row="1"
+                     VerticalScrollBarVisibility="Auto"
+                     Padding="24">
+            <StackPanel>
+                <!-- Información del Pago -->
+                <TextBlock Text="INFORMACIÓN DEL PAGO"
+                          FontWeight="SemiBold"
+                          FontSize="16"
+                          Margin="0,0,0,16"/>
+
+                <materialDesign:Card Padding="16" Margin="0,0,0,24">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Monto Mensual -->
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,12">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <materialDesign:PackIcon Kind="CashMultiple"
+                                                        VerticalAlignment="Center"
+                                                        Margin="0,0,8,0"/>
+                                <TextBlock Text="Monto Mensual" 
+                                          FontSize="12" 
+                                          Opacity="0.7"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="MontoMensualTextBlock"
+                                      Text="L 0.00"
+                                      FontSize="18"
+                                      FontWeight="Bold"/>
+                        </StackPanel>
+
+                        <!-- Estado -->
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,12">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <materialDesign:PackIcon Kind="InformationOutline"
+                                                        VerticalAlignment="Center"
+                                                        Margin="0,0,8,0"/>
+                                <TextBlock Text="Estado" 
+                                          FontSize="12" 
+                                          Opacity="0.7"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Border x:Name="EstadoBorder"
+                                   Background="#4CAF50"
+                                   CornerRadius="4"
+                                   Padding="8,4"
+                                   HorizontalAlignment="Left">
+                                <TextBlock x:Name="EstadoTextBlock"
+                                          Text="Al Día"
+                                          FontSize="12"
+                                          FontWeight="Bold"
+                                          Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Próximo Pago -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <materialDesign:PackIcon Kind="CalendarClock"
+                                                        VerticalAlignment="Center"
+                                                        Margin="0,0,8,0"/>
+                                <TextBlock Text="Próximo Pago" 
+                                          FontSize="12" 
+                                          Opacity="0.7"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="ProximoPagoTextBlock"
+                                      Text="01/01/2024"
+                                      FontSize="16"
+                                      FontWeight="SemiBold"/>
+                        </StackPanel>
+
+                        <!-- Día de Pago -->
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <materialDesign:PackIcon Kind="CalendarToday"
+                                                        VerticalAlignment="Center"
+                                                        Margin="0,0,8,0"/>
+                                <TextBlock Text="Día de Pago" 
+                                          FontSize="12" 
+                                          Opacity="0.7"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="DiaPagoTextBlock"
+                                      Text="Día 15"
+                                      FontSize="16"
+                                      FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Historial de Pagos -->
+                <TextBlock Text="HISTORIAL DE PAGOS"
+                          FontWeight="SemiBold"
+                          FontSize="16"
+                          Margin="0,0,0,16"/>
+
+                <ItemsControl x:Name="HistorialItemsControl">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <materialDesign:Card Margin="0,0,0,12" 
+                                               Padding="16"
+                                               Background="{DynamicResource MaterialDesignCardBackground}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Icono -->
+                                    <Border Grid.Column="0"
+                                           Width="40"
+                                           Height="40"
+                                           CornerRadius="20"
+                                           Background="#E3F2FD"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,16,0">
+                                        <materialDesign:PackIcon Kind="Check"
+                                                                Width="24"
+                                                                Height="24"
+                                                                Foreground="#2196F3"/>
+                                    </Border>
+
+                                    <!-- Información -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding FechaPagoTexto}"
+                                                  FontSize="14"
+                                                  FontWeight="SemiBold"
+                                                  Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding MetodoPagoTexto}"
+                                                  FontSize="12"
+                                                  Opacity="0.7"/>
+                                        <TextBlock Text="{Binding Referencia}"
+                                                  FontSize="11"
+                                                  Opacity="0.6"
+                                                  Margin="0,2,0,0"
+                                                  Visibility="{Binding ReferenciaVisibility}"/>
+                                    </StackPanel>
+
+                                    <!-- Monto -->
+                                    <TextBlock Grid.Column="2"
+                                              Text="{Binding MontoTexto}"
+                                              FontSize="18"
+                                              FontWeight="Bold"
+                                              Foreground="#4CAF50"
+                                              VerticalAlignment="Center"/>
+                                </Grid>
+                            </materialDesign:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Sin historial -->
+                <StackPanel x:Name="EmptyHistorialPanel"
+                           Visibility="Collapsed"
+                           Margin="0,40,0,40"
+                           HorizontalAlignment="Center">
+                    <materialDesign:PackIcon Kind="FileDocumentRemove"
+                                            Width="60"
+                                            Height="60"
+                                            Foreground="#CCCCCC"
+                                            HorizontalAlignment="Center"/>
+                    <TextBlock Text="No hay historial de pagos"
+                              FontSize="16"
+                              Foreground="#999999"
+                              HorizontalAlignment="Center"
+                              Margin="0,16,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="2"
+                BorderBrush="#E0E0E0"
+                BorderThickness="0,1,0,0"
+                Padding="24,16">
+            <Button Content="CERRAR"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Click="CerrarButton_Click"
+                    HorizontalAlignment="Right"/>
+        </Border>
+    </Grid>
+</Window>
