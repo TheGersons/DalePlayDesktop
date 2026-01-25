@@ -17,6 +17,14 @@ namespace StreamManager.Views.Pages
         public PagosPlataformaPage()
         {
             InitializeComponent();
+            // Ocultar cards de gastos para vendedores
+            if (UserSession.IsVendedor)
+            {
+                PagosVencidosCard.Visibility = Visibility.Collapsed;
+                PorPagarCard.Visibility = Visibility.Collapsed;
+                AlDiaCard.Visibility = Visibility.Collapsed;
+                GastoMensualCard.Visibility = Visibility.Collapsed;
+            }
 
             _supabase = App.ServiceProvider?.GetRequiredService<SupabaseService>()
                 ?? throw new InvalidOperationException("SupabaseService no disponible");
@@ -75,25 +83,29 @@ namespace StreamManager.Views.Pages
         {
             try
             {
-                var vencidos = _todosPagosPlataf.Where(p => p.Estado == "vencido").ToList();
-                var porPagar = _todosPagosPlataf.Where(p => p.Estado == "por_pagar").ToList();
-                var alDia = _todosPagosPlataf.Where(p => p.Estado == "al_dia").ToList();
+                // Solo actualizar si es admin
+                if (UserSession.IsAdmin)
+                {
+                    var vencidos = _todosPagosPlataf.Where(p => p.Estado == "vencido").ToList();
+                    var porPagar = _todosPagosPlataf.Where(p => p.Estado == "por_pagar").ToList();
+                    var alDia = _todosPagosPlataf.Where(p => p.Estado == "al_dia").ToList();
 
-                // Vencidos
-                PagosVencidosTextBlock.Text = vencidos.Count.ToString();
-                MontoVencidoTextBlock.Text = $"L {vencidos.Sum(p => p.MontoMensual):N2}";
+                    // Vencidos
+                    PagosVencidosTextBlock.Text = vencidos.Count.ToString();
+                    MontoVencidoTextBlock.Text = $"L {vencidos.Sum(p => p.MontoMensual):N2}";
 
-                // Por pagar
-                PagosPorPagarTextBlock.Text = porPagar.Count.ToString();
-                MontoPorPagarTextBlock.Text = $"L {porPagar.Sum(p => p.MontoMensual):N2}";
+                    // Por pagar
+                    PagosPorPagarTextBlock.Text = porPagar.Count.ToString();
+                    MontoPorPagarTextBlock.Text = $"L {porPagar.Sum(p => p.MontoMensual):N2}";
 
-                // Al día
-                PagosAlDiaTextBlock.Text = alDia.Count.ToString();
-                MontoAlDiaTextBlock.Text = $"L {alDia.Sum(p => p.MontoMensual):N2}";
+                    // Al día
+                    PagosAlDiaTextBlock.Text = alDia.Count.ToString();
+                    MontoAlDiaTextBlock.Text = $"L {alDia.Sum(p => p.MontoMensual):N2}";
 
-                // Gasto mensual total
-                var gastoTotal = _todosPagosPlataf.Sum(p => p.MontoMensual);
-                GastoMensualTextBlock.Text = $"L {gastoTotal:N2}";
+                    // Gasto mensual total
+                    var gastoTotal = _todosPagosPlataf.Sum(p => p.MontoMensual);
+                    GastoMensualTextBlock.Text = $"L {gastoTotal:N2}";
+                }
             }
             catch (Exception ex)
             {

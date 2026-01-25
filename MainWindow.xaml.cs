@@ -5,6 +5,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using StreamManager.Services;
 using StreamManager.Views;
+using StreamManager.Views.Dialogs;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -29,7 +30,45 @@ namespace StreamManager
             _alertaService = App.ServiceProvider?.GetRequiredService<AlertaService>()
                 ?? throw new InvalidOperationException("AlertaService no disponible");
 
+            // Actualizar información del usuario en el sidebar
+            ActualizarInfoUsuario();
+
+            // Ocultar opciones según rol
+            if (UserSession.IsVendedor)
+            {
+                ReportesButton.Visibility = Visibility.Collapsed;
+                HistorialPagosButton.Visibility = Visibility.Collapsed;
+                ConfiguracionButton.Visibility = Visibility.Collapsed;
+                UsuariosButton.Visibility = Visibility.Collapsed;
+            }
+
             Loaded += MainWindow_Loaded;
+        }
+
+        private void ActualizarInfoUsuario()
+        {
+            if (UserSession.CurrentUser != null)
+            {
+                var usuario = UserSession.CurrentUser;
+
+                // Nombre del usuario
+                UserNameTextBlock.Text = usuario.NombreCompleto;
+
+                // Rol del usuario
+                UserRolTextBlock.Text = usuario.Rol == "admin" ? "Administrador" : "Vendedor";
+
+                // Inicial del usuario (primera letra del nombre)
+                var inicial = string.IsNullOrEmpty(usuario.NombreCompleto)
+                    ? "?"
+                    : usuario.NombreCompleto[0].ToString().ToUpper();
+                UserInitialTextBlock.Text = inicial;
+            }
+            else
+            {
+                UserNameTextBlock.Text = "Usuario";
+                UserRolTextBlock.Text = "Desconocido";
+                UserInitialTextBlock.Text = "?";
+            }
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -147,6 +186,7 @@ namespace StreamManager
                     "PagosPage" => "Historial de Pagos",
                     "AlertasPage" => "Alertas",
                     "ConfiguracionPage" => "Configuraciones",
+                    "UsuariosPage" => "Usuarios",
                     _ => pageName
                 };
 
@@ -190,14 +230,21 @@ namespace StreamManager
 
             if (resultado == MessageBoxResult.Yes)
             {
-                // ✅ NUEVO: Detener timer al cerrar sesión
+                // Detener timer al cerrar sesión
                 _timerAlertas?.Stop();
 
-                var loginWindow = new LoginWindow();
+                // Limpiar sesión
+                UserSession.CurrentUser = null;
+
+                // Mostrar login
+                var loginWindow = new Views.LoginWindow();
                 loginWindow.Show();
+
+                // Cerrar ventana actual
                 Close();
             }
         }
+
         public async Task RefrescarAlertasAsync()
         {
             // Reutilizamos la lógica completa que ya tienes programada

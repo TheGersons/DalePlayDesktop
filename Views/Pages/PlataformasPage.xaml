@@ -102,11 +102,6 @@
                                           Binding="{Binding PrecioBase, StringFormat=L {0:N2}}"
                                           Width="120"/>
 
-                        <!-- Precio Base -->
-                        <DataGridTextColumn Header="Precio cuenta completa" 
-                  Binding="{Binding PrecioBase, StringFormat=L {0:N2}}"
-                  Width="120"/>
-
                         <!-- Máx Perfiles -->
                         <DataGridTextColumn Header="Máx. Perfiles" 
                                           Binding="{Binding MaxPerfiles}"

@@ -60,13 +60,7 @@
                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
                         Margin="0,0,0,16"
                         PreviewTextInput="NumeroTextBox_PreviewTextInput"/>
-
-                <!-- Precio cuenta completa -->
-                <TextBox x:Name="PrecioCompletaTextBox"
-        materialDesign:HintAssist.Hint="Precio Cuenta completa (L) *"
-        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-        Margin="0,0,0,16"/>
-                
+   
                 <!-- Máx Perfiles -->
                 <TextBox x:Name="MaxPerfilesTextBox"
                         materialDesign:HintAssist.Hint="Máximo de Perfiles *"

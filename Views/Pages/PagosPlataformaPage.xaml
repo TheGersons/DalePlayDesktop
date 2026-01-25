@@ -32,8 +32,8 @@
             </Grid.ColumnDefinitions>
 
             <!-- Pagos Vencidos -->
-            <materialDesign:Card Grid.Column="0" Margin="0,0,8,0" Padding="20">
-                <StackPanel>
+            <materialDesign:Card x:Name="PagosVencidosCard" Grid.Column="0" Margin="0,0,8,0" Padding="20">
+                    <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <materialDesign:PackIcon Kind="AlertCircle" 
                                                 Width="24" Height="24" 
@@ -59,8 +59,8 @@
             </materialDesign:Card>
 
             <!-- Por Pagar -->
-            <materialDesign:Card Grid.Column="1" Margin="0,0,8,0" Padding="20">
-                <StackPanel>
+            <materialDesign:Card x:Name="PorPagarCard" Grid.Column="1" Margin="0,0,8,0" Padding="20">
+                    <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <materialDesign:PackIcon Kind="ClockAlert" 
                                                 Width="24" Height="24" 
@@ -86,8 +86,8 @@
             </materialDesign:Card>
 
             <!-- Al Día -->
-            <materialDesign:Card Grid.Column="2" Margin="0,0,8,0" Padding="20">
-                <StackPanel>
+            <materialDesign:Card x:Name="AlDiaCard" Grid.Column="2" Margin="0,0,8,0" Padding="20">
+                    <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <materialDesign:PackIcon Kind="CheckCircle" 
                                                 Width="24" Height="24" 
@@ -113,8 +113,8 @@
             </materialDesign:Card>
 
             <!-- Gasto Mensual -->
-            <materialDesign:Card Grid.Column="3" Padding="20">
-                <StackPanel>
+            <materialDesign:Card x:Name="GastoMensualCard" Grid.Column="3" Padding="20">
+                    <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <materialDesign:PackIcon Kind="TrendingUp" 
                                                 Width="24" Height="24" 

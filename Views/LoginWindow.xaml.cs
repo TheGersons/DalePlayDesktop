@@ -45,7 +45,6 @@ namespace StreamManager.Views
             var password = PasswordBox.Password;
 
             var hashGenerado = BCrypt.Net.BCrypt.HashPassword(password, 11);
-            System.Diagnostics.Debug.WriteLine($"[HASH] Hash para '{password}': {hashGenerado}");
 
             if (string.IsNullOrEmpty(email))
             {
@@ -67,16 +66,27 @@ namespace StreamManager.Views
 
             try
             {
-                // DEBUG: Mostrar intento de login
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Intentando login con email: {email}");
 
                 bool loginExitoso = await _supabase.LoginAsync(email, password);
 
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Resultado login: {loginExitoso}");
 
                 if (loginExitoso)
                 {
-                    System.Diagnostics.Debug.WriteLine("[DEBUG] Login exitoso, abriendo MainWindow");
+
+                    // Obtener datos del usuario
+                    var usuarios = await _supabase.ObtenerUsuariosAsync();
+                    var usuario = usuarios.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
+
+                    if (usuario != null)
+                    {
+                        // Guardar en sesión
+                        UserSession.CurrentUser = usuario;
+
+                        // Actualizar último acceso
+                        usuario.FechaUltimoAcceso = DateTime.Now;
+                        await _supabase.ActualizarUsuarioAsync(usuario);
+
+                    }
 
                     // Abrir ventana principal
                     var mainWindow = new MainWindow();
@@ -85,7 +95,6 @@ namespace StreamManager.Views
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("[DEBUG] Login falló - credenciales incorrectas");
                     MostrarError("Credenciales incorrectas o usuario inactivo.\n\n" +
                                 "Verifica:\n" +
                                 "1. Email: admin@streammanager.com\n" +
@@ -97,8 +106,6 @@ namespace StreamManager.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Error en login: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] StackTrace: {ex.StackTrace}");
 
                 MostrarError($"Error al iniciar sesión:\n{ex.Message}\n\n" +
                            "Verifica tu conexión a Supabase en appsettings.json");

@@ -122,14 +122,14 @@
                             </StackPanel>
                         </Button>
 
-                        <Button Tag="ReportesPage" Click="MenuButton_Click" Style="{StaticResource MenuButtonStyle}">
+                        <Button x:Name="ReportesButton" Tag="ReportesPage" Click="MenuButton_Click" Style="{StaticResource MenuButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="FileChart" Width="20" Height="20" VerticalAlignment="Center"/>
                                 <TextBlock Text="Reportes y Métricas" Margin="16,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
-                        <Button Tag="PagosPage" Click="MenuButton_Click" Style="{StaticResource MenuButtonStyle}">
+                        <Button x:Name="HistorialPagosButton" Tag="PagosPage" Click="MenuButton_Click" Style="{StaticResource MenuButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="History" Width="20" Height="20" VerticalAlignment="Center" />
                                 <TextBlock Text="Historial de Pagos" Margin="16,0,0,0" VerticalAlignment="Center"/>
@@ -145,7 +145,14 @@
                             </StackPanel>
                         </Button>
 
-                        <Button Tag="ConfiguracionPage" Click="MenuButton_Click" Style="{StaticResource MenuButtonStyle}">
+                        <Button x:Name="UsuariosButton" Tag="UsuariosPage" Click="MenuButton_Click" Style="{StaticResource MenuButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="AccountGroup" Width="20" Height="20" VerticalAlignment="Center"/>
+                                <TextBlock Text="Usuarios" Margin="16,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="ConfiguracionButton" Tag="ConfiguracionPage" Click="MenuButton_Click" Style="{StaticResource MenuButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Cog" Width="20" Height="20" VerticalAlignment="Center"/>
                                 <TextBlock Text="Configuraciones" Margin="16,0,0,0" VerticalAlignment="Center"/>
@@ -163,12 +170,12 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Width="35" Height="35" CornerRadius="18" Background="#2196F3">
-                            <TextBlock Text="A" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold"/>
+                            <TextBlock x:Name="UserInitialTextBlock" Text="A" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold"/>
                         </Border>
 
                         <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
-                            <TextBlock Text="Admin" Foreground="White" FontSize="12" FontWeight="Bold"/>
-                            <TextBlock Text="En línea" Foreground="#4CAF50" FontSize="9"/>
+                            <TextBlock x:Name="UserNameTextBlock" Text="Admin" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                            <TextBlock x:Name="UserRolTextBlock" Text="En línea" Foreground="#4CAF50" FontSize="9"/>
                         </StackPanel>
 
                         <Button Grid.Column="2" Style="{StaticResource MaterialDesignIconButton}" Click="CerrarSesionButton_Click">

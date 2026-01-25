@@ -1,0 +1,212 @@
+<Page x:Class="StreamManager.Views.Pages.UsuariosPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      Title="Usuarios">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Título -->
+            <TextBlock Grid.Row="0"
+                       Text="Gestión de Usuarios" 
+                       FontSize="32"
+                       FontWeight="Bold"
+                       Margin="0,0,0,8"/>
+
+            <!-- Botones de acción -->
+            <StackPanel Grid.Row="1" 
+                        Orientation="Horizontal" 
+                        Margin="0,0,0,16">
+                <Button x:Name="NuevoUsuarioButton"
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Click="NuevoUsuarioButton_Click"
+                        Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="AccountPlus" 
+                                                VerticalAlignment="Center"
+                                                Width="18"
+                                                Height="18"/>
+                        <TextBlock Text="NUEVO USUARIO" 
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="RefrescarButton"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Click="RefrescarButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Refresh" 
+                                                VerticalAlignment="Center"
+                                                Width="18"
+                                                Height="18"/>
+                        <TextBlock Text="REFRESCAR" 
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- Lista de Usuarios -->
+            <materialDesign:Card Grid.Row="2"
+                                 Padding="0"
+                                 materialDesign:ElevationAssist.Elevation="Dp2">
+                <Grid>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                 MinHeight="400"
+                                 MaxHeight="700">
+                        <ItemsControl x:Name="UsuariosItemsControl">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#E0E0E0"
+                                           BorderThickness="0,0,0,1"
+                                           Padding="24">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Icono -->
+                                            <Border Grid.Column="0"
+                                                   Width="56"
+                                                   Height="56"
+                                                   CornerRadius="28"
+                                                   Background="{Binding RolColor}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,20,0">
+                                                <materialDesign:PackIcon Kind="{Binding RolIcono}"
+                                                                        Width="32"
+                                                                        Height="32"
+                                                                        Foreground="White"/>
+                                            </Border>
+
+                                            <!-- Información -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding NombreCompleto}"
+                                                          FontSize="18"
+                                                          FontWeight="Bold"
+                                                          Margin="0,0,0,4"/>
+                                                
+                                                <TextBlock Text="{Binding Email}"
+                                                          FontSize="13"
+                                                          Opacity="0.7"
+                                                          Margin="0,0,0,8"/>
+
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Background="{Binding RolColor}"
+                                                           CornerRadius="4"
+                                                           Padding="8,4"
+                                                           Margin="0,0,8,0">
+                                                        <TextBlock Text="{Binding RolTexto}"
+                                                                  FontSize="11"
+                                                                  FontWeight="Bold"
+                                                                  Foreground="White"/>
+                                                    </Border>
+
+                                                    <Border Background="{Binding EstadoColor}"
+                                                           CornerRadius="4"
+                                                           Padding="8,4">
+                                                        <TextBlock Text="{Binding EstadoTexto}"
+                                                                  FontSize="11"
+                                                                  FontWeight="Bold"
+                                                                  Foreground="White"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Fecha registro -->
+                                            <StackPanel Grid.Column="2"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,20,0">
+                                                <TextBlock Text="Registro"
+                                                          FontSize="11"
+                                                          Opacity="0.6"
+                                                          HorizontalAlignment="Right"/>
+                                                <TextBlock Text="{Binding FechaCreacionTexto}"
+                                                          FontSize="13"
+                                                          FontWeight="SemiBold"
+                                                          HorizontalAlignment="Right"/>
+                                            </StackPanel>
+
+                                            <!-- Acciones -->
+                                            <StackPanel Grid.Column="3"
+                                                       Orientation="Horizontal"
+                                                       VerticalAlignment="Center">
+                                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                       ToolTip="Editar usuario"
+                                                       Tag="{Binding Id}"
+                                                       Click="EditarButton_Click"
+                                                       Margin="0,0,8,0">
+                                                    <materialDesign:PackIcon Kind="Pencil"
+                                                                            Width="20"
+                                                                            Height="20"/>
+                                                </Button>
+
+                                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                       ToolTip="Eliminar usuario"
+                                                       Tag="{Binding Id}"
+                                                       Click="EliminarButton_Click">
+                                                    <materialDesign:PackIcon Kind="Delete"
+                                                                            Width="20"
+                                                                            Height="20"
+                                                                            Foreground="#F44336"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Loading overlay -->
+                    <Grid x:Name="LoadingOverlay"
+                          Background="#80000000"
+                          Visibility="Collapsed">
+                        <StackPanel VerticalAlignment="Center" 
+                                   HorizontalAlignment="Center">
+                            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                        Value="0"
+                                        IsIndeterminate="True"
+                                        Width="48"
+                                        Height="48"/>
+                            <TextBlock Text="Cargando usuarios..." 
+                                      Foreground="White"
+                                      Margin="0,16,0,0"
+                                      HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Estado vacío -->
+                    <StackPanel x:Name="EmptyStatePanel"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Visibility="Collapsed"
+                               Margin="40">
+                        <materialDesign:PackIcon Kind="AccountOff"
+                                                Width="80"
+                                                Height="80"
+                                                Foreground="#CCCCCC"
+                                                HorizontalAlignment="Center"/>
+                        <TextBlock Text="No hay usuarios registrados"
+                                  FontSize="20"
+                                  FontWeight="SemiBold"
+                                  Foreground="#999999"
+                                  HorizontalAlignment="Center"
+                                  Margin="0,16,0,8"/>
+                    </StackPanel>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
+    </ScrollViewer>
+</Page>

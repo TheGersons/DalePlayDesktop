@@ -19,6 +19,13 @@ namespace StreamManager.Views.Pages
             _supabase = App.ServiceProvider?.GetRequiredService<SupabaseService>()
                 ?? throw new InvalidOperationException("SupabaseService no disponible");
 
+            // Ocultar información de dinero para vendedores
+            if (UserSession.IsVendedor)
+            {
+                IngresosMensualesCard.Visibility = Visibility.Collapsed;
+                IngresosPorPlataformaCard.Visibility = Visibility.Collapsed;
+            }
+
             Loaded += DashboardPage_Loaded;
         }
 
@@ -51,13 +58,16 @@ namespace StreamManager.Views.Pages
                 TotalSuscripcionesTextBlock.Text = suscripcionesActivas.Count.ToString();
 
                 var suscripcionesEsteMes = suscripcionesActivas
-                    .Count(s => s.FechaInicio.Month == DateTime.Now.Month && 
+                    .Count(s => s.FechaInicio.Month == DateTime.Now.Month &&
                                s.FechaInicio.Year == DateTime.Now.Year);
                 SuscripcionesChangeTextBlock.Text = $"+{suscripcionesEsteMes} este mes";
 
-                // Calcular ingresos mensuales
-                var ingresosMensuales = suscripcionesActivas.Sum(s => s.Precio);
-                IngresosMensualesTextBlock.Text = $"L {ingresosMensuales:N2}";
+                // Calcular ingresos mensuales (solo para admin)
+                if (UserSession.IsAdmin)
+                {
+                    var ingresosMensuales = suscripcionesActivas.Sum(s => s.Precio);
+                    IngresosMensualesTextBlock.Text = $"L {ingresosMensuales:N2}";
+                }
 
                 // Calcular clientes
                 var clientesActivos = clientes.Where(c => c.Estado == "activo").ToList();
@@ -69,8 +79,11 @@ namespace StreamManager.Views.Pages
                 PerfilesDisponiblesTextBlock.Text = perfilesDisponibles.ToString();
                 PerfilesTotalTextBlock.Text = $"De {perfiles.Count} totales";
 
-                // Gráfico de ingresos por plataforma
-                CargarIngresosPorPlataforma(suscripcionesActivas, plataformas, cuentas, perfiles);
+                // Gráfico de ingresos por plataforma (solo para admin)
+                if (UserSession.IsAdmin)
+                {
+                    CargarIngresosPorPlataforma(suscripcionesActivas, plataformas, cuentas, perfiles);
+                }
 
                 // Cargar alertas
                 CargarAlertas(alertas.Where(a => a.Estado == "pendiente").OrderByDescending(a => a.FechaCreacion).Take(5).ToList());
@@ -92,9 +105,9 @@ namespace StreamManager.Views.Pages
             }
         }
 
-        private void CargarIngresosPorPlataforma(List<Data.Models.Suscripcion> suscripciones, 
-            List<Data.Models.Plataforma> plataformas, 
-            List<Data.Models.CuentaCorreo> cuentas, 
+        private void CargarIngresosPorPlataforma(List<Data.Models.Suscripcion> suscripciones,
+            List<Data.Models.Plataforma> plataformas,
+            List<Data.Models.CuentaCorreo> cuentas,
             List<Data.Models.Perfil> perfiles)
         {
             var ingresosPorPlataforma = new List<IngresoPorPlataforma>();
@@ -148,13 +161,13 @@ namespace StreamManager.Views.Pages
                 return $"Hace {(int)diferencia.TotalHours} horas";
             if (diferencia.TotalDays < 7)
                 return $"Hace {(int)diferencia.TotalDays} días";
-            
+
             return fecha.ToString("dd/MM/yyyy");
         }
 
-        private void CargarPlataformasPopulares(List<Data.Models.Suscripcion> suscripciones, 
-            List<Data.Models.Plataforma> plataformas, 
-            List<Data.Models.CuentaCorreo> cuentas, 
+        private void CargarPlataformasPopulares(List<Data.Models.Suscripcion> suscripciones,
+            List<Data.Models.Plataforma> plataformas,
+            List<Data.Models.CuentaCorreo> cuentas,
             List<Data.Models.Perfil> perfiles)
         {
             var plataformasPopulares = new List<PlataformaPopular>();

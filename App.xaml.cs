@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StreamManager.Services;
+using StreamManager.Views;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -44,18 +45,14 @@ namespace StreamManager
 
             ServiceProvider = services.BuildServiceProvider();
 
-            // Inicializar Supabase y generar alertas
+            // Inicializar Supabase
             var supabase = ServiceProvider.GetRequiredService<SupabaseService>();
-            var alertaService = ServiceProvider.GetRequiredService<AlertaService>();
 
             Task.Run(async () =>
             {
                 try
                 {
                     await supabase.InicializarAsync();
-
-                    // Generar alertas automáticas al iniciar la aplicación
-                    await alertaService.GenerarAlertasAutomaticasAsync();
                 }
                 catch (Exception ex)
                 {
@@ -67,6 +64,10 @@ namespace StreamManager
                         MessageBoxImage.Error);
                 }
             }).Wait();
+
+            // Mostrar login
+            var loginWindow = new LoginWindow();
+            loginWindow.Show();
         }
 
         protected override void OnExit(ExitEventArgs e)

@@ -114,7 +114,8 @@
                 </materialDesign:Card>
 
                 <!-- Ingresos Mensuales -->
-                <materialDesign:Card Grid.Column="1"
+                <materialDesign:Card x:Name="IngresosMensualesCard"
+                                     Grid.Column="1"
                                      Margin="0,0,12,0"
                                      Padding="24"
                                      materialDesign:ElevationAssist.Elevation="Dp4"
@@ -280,7 +281,8 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Gráfico de Ingresos -->
-                <materialDesign:Card Grid.Column="0"
+                <materialDesign:Card x:Name="IngresosPorPlataformaCard"
+                                     Grid.Column="0"
                                      Margin="0,0,12,0"
                                      Padding="24"
                                      materialDesign:ElevationAssist.Elevation="Dp2">

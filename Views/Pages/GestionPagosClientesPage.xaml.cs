@@ -23,6 +23,10 @@ namespace StreamManager.Views.Pages
 
             _supabase = App.ServiceProvider?.GetService<SupabaseService>()
                 ?? throw new InvalidOperationException("SupabaseService no disponible");
+            if (UserSession.IsVendedor)
+            {
+                CobradoHoyCard.Visibility = Visibility.Collapsed;
+            }
 
             Loaded += GestionPagosClientesPage_Loaded;
         }
@@ -99,8 +103,10 @@ namespace StreamManager.Views.Pages
                 if (ProximosTextBlock != null) ProximosTextBlock.Text = proximos.Count.ToString();
                 if (MontoProximosTextBlock != null) MontoProximosTextBlock.Text = $"L {proximos.Sum(s => s.Precio):N2}";
 
-                // Cobrado hoy
-                Task.Run(async () =>
+                if (UserSession.IsAdmin)
+                {
+                    // Cobrado hoy
+                    Task.Run(async () =>
                 {
                     try
                     {
@@ -115,6 +121,7 @@ namespace StreamManager.Views.Pages
                     }
                     catch { /* Silenciar error de resumen si falla */ }
                 });
+                }
             }
             catch (Exception ex)
             {

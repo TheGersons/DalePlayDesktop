@@ -484,5 +484,38 @@ namespace StreamManager.Services
                 await client.From<Configuracion>().Update(config);
             }
         }
+
+        // Usuarios
+        public async Task<List<AuthUser>> ObtenerUsuariosAsync()
+        {
+            var response = await _client
+                .From<AuthUser>()
+                .Get();
+
+            return response.Models;
+        }
+
+        public async Task ActualizarUsuarioAsync(AuthUser usuario)
+        {
+            await _client
+                .From<AuthUser>()
+                .Where(u => u.Id == usuario.Id)
+                .Update(usuario);
+        }
+
+        public async Task CrearUsuarioAsync(AuthUser usuario)
+        {
+            await _client
+                .From<AuthUser>()
+                .Insert(usuario);
+        }
+
+        public async Task EliminarUsuarioAsync(Guid id)
+        {
+            await _client
+                .From<AuthUser>()
+                .Where(u => u.Id == id)
+                .Delete();
+        }
     }
 }
